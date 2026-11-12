@@ -811,8 +811,8 @@
         // =============================================================
         // NASTAVENÍ SUPABASE (VLOŽ SVÉ ÚDAJE Z PROJECT SETTINGS -> DATA API / API KEYS)
         // =============================================================
-        const SUPABASE_URL = "https://zgnwzwygkfaeazcbwmod.supabase.co/rest/v1/";
-        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_YSFOer4K0aug13X_cAgjng_bgnaUX92";
+        const SUPABASE_URL = "VLOZ_SVOU_SUPABASE_URL";
+        const SUPABASE_PUBLISHABLE_KEY = "VLOZ_SVUJ_PUBLISHABLE_KEY";
 
         function isSupabaseConfigured() {
             return (
@@ -1291,14 +1291,34 @@
                 });
 
                 if (fnError || fnData?.error) {
-                    let errMessage = fnData?.error || 'Registrace se nezdařila.';
-                    if (fnError && fnError.context && typeof fnError.context.json === 'function') {
+                    let errMessage = fnData?.error || fnData?.message || '';
+                    let httpStatus = null;
+
+                    if (!errMessage && fnError && fnError.context) {
+                        httpStatus = fnError.context.status || null;
                         try {
-                            const errBody = await fnError.context.json();
-                            if (errBody?.error) errMessage = errBody.error;
+                            const rawText = await fnError.context.text();
+                            if (rawText) {
+                                try {
+                                    const errBody = JSON.parse(rawText);
+                                    errMessage = errBody?.error || errBody?.message || errBody?.msg || rawText;
+                                } catch (_) {
+                                    errMessage = rawText;
+                                }
+                            }
                         } catch (_) {}
-                    } else if (fnError?.message && !fnData?.error) {
+                    }
+
+                    if (!errMessage && fnError?.message) {
                         errMessage = fnError.message;
+                    }
+
+                    if (httpStatus === 401 || String(errMessage).toLowerCase().includes('invalid jwt')) {
+                        errMessage = 'Chyba 401 (Invalid JWT): V Supabase u funkce "register-user" vypni volbu Enforce JWT Verification (Details -> Enforce JWT Verification -> vypnout a uložit).';
+                    } else if (httpStatus === 404) {
+                        errMessage = 'Chyba 404: Funkce "register-user" nebyla v Supabase nalezena. Zkontroluj její přesný název.';
+                    } else if (!errMessage) {
+                        errMessage = 'Registrace se nezdařila.';
                     }
 
                     statusText.textContent = errMessage;
