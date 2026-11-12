@@ -9,6 +9,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS SDK v2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Google Fonts: Plus Jakarta Sans & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -743,18 +745,14 @@
                     <span>Nesprávné přihlašovací jméno nebo heslo.</span>
                 </div>
 
-                <button type="submit"
-                    class="w-full flex items-center justify-center space-x-2 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30">
+                <button type="submit" id="loginSubmitBtn"
+                    class="w-full flex items-center justify-center space-x-2 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30 disabled:opacity-60 disabled:cursor-not-allowed">
                     <i data-lucide="log-in" class="w-4 h-4"></i>
-                    <span>Přihlásit se</span>
+                    <span id="loginSubmitText">Přihlásit se</span>
                 </button>
-
-                <p class="text-center text-[11px] text-slate-500 pt-0.5">
-                    Testovací účet: <span class="text-slate-300 font-semibold">Test</span> / <span class="text-slate-300 font-semibold">test</span>
-                </p>
             </form>
 
-            <!-- REGISTER FORM (VISUAL PREVIEW WITH SPECIAL CODE) -->
+            <!-- REGISTER FORM (WITH SERVER-VERIFIED INVITE CODE) -->
             <form id="registerForm" onsubmit="window.handleRegister(event)" class="hidden space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1.5">Přihlašovací jméno</label>
@@ -767,7 +765,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Heslo</label>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Heslo (min. 6 znaků)</label>
                     <div class="relative">
                         <input type="password" id="regPassword" autocomplete="new-password" placeholder="Zvol si heslo..."
                             oninput="window.clearAuthFeedback()"
@@ -790,15 +788,15 @@
                     </div>
                 </div>
 
-                <div id="registerStatusMsg" class="hidden flex items-start space-x-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium leading-relaxed">
-                    <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+                <div id="registerStatusMsg" class="hidden flex items-start space-x-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium leading-relaxed">
+                    <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
                     <span id="registerStatusText"></span>
                 </div>
 
-                <button type="submit"
-                    class="w-full flex items-center justify-center space-x-2 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30">
+                <button type="submit" id="registerSubmitBtn"
+                    class="w-full flex items-center justify-center space-x-2 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30 disabled:opacity-60 disabled:cursor-not-allowed">
                     <i data-lucide="user-plus" class="w-4 h-4"></i>
-                    <span>Vytvořit účet</span>
+                    <span id="registerSubmitText">Vytvořit účet</span>
                 </button>
             </form>
         </div>
@@ -806,32 +804,46 @@
 
     <!-- APPLICATION LOGIC SCRIPT -->
     <script>
-        // -------------------------------------------------------------
-        // GLOBAL STATE & LOCAL USERS
-        // -------------------------------------------------------------
-        const localUsers = [
-            { username: "Test", password: "test" }
-        ];
-        let currentUser = null;
+        // =============================================================
+        // NASTAVENÍ SUPABASE (VLOŽ SVÉ ÚDAJE Z PROJECT SETTINGS -> DATA API / API KEYS)
+        // =============================================================
+        const SUPABASE_URL = "https://zgnwzwygkfaeazcbwmod.supabase.co/rest/v1/";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_YSFOer4K0aug13X_cAgjng_bgnaUX92";
 
-        let userXp = 140;
-        let displayedUserXp = 140;
+        function isSupabaseConfigured() {
+            return (
+                typeof SUPABASE_URL === "string" &&
+                SUPABASE_URL.startsWith("https://") &&
+                !SUPABASE_URL.includes("VLOZ_SVOU") &&
+                typeof SUPABASE_PUBLISHABLE_KEY === "string" &&
+                SUPABASE_PUBLISHABLE_KEY.length > 20 &&
+                !SUPABASE_PUBLISHABLE_KEY.includes("VLOZ_SVUJ")
+            );
+        }
+
+        const supabaseClient = isSupabaseConfigured() && window.supabase
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+            : null;
+
+        // -------------------------------------------------------------
+        // GLOBAL STATE
+        // -------------------------------------------------------------
+        let currentUser = null;
+        let currentUsername = "";
+
+        let userXp = 0;
+        let displayedUserXp = 0;
         let xpAnimationFrameId = null;
         let xpBadgeAnimTimeout = null;
         let dailyStreak = 0;
 
         let tasks = [];
-        let categories = ["Práce", "Škola", "Projekt", "Zdraví"];
+        let categories = [];
         let colorPalette = [
-            { name: "Bílá", hex: "#FFFFFF" },
-            { name: "Indigová", hex: "#6366F1" },
-            { name: "Smaragdová", hex: "#10B981" },
-            { name: "Červená", hex: "#EF4444" },
-            { name: "Tyrkysová", hex: "#06B6D4" },
-            { name: "Jantarová", hex: "#F59E0B" }
+            { name: "Bílá", hex: "#FFFFFF" }
         ];
 
-        let selectedTaskColor = "#6366F1";
+        let selectedTaskColor = "#FFFFFF";
         let tempSubtasks = [];
         let editingTempSubtaskIndex = null;
 
@@ -841,8 +853,16 @@
         const COMPLETED_TASK_TTL_MS = 24 * 60 * 60 * 1000; // 1 day (24 hours)
 
         // -------------------------------------------------------------
-        // SAFE ESCAPING & INPUT FEEDBACK HELPERS
+        // SAFE ESCAPING, INTERNAL EMAIL & INPUT FEEDBACK HELPERS
         // -------------------------------------------------------------
+        function usernameToInternalEmail(username) {
+            const bytes = new TextEncoder().encode(username.trim().toLowerCase());
+            const hex = Array.from(bytes)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+            return `u_${hex}@questlog.local`;
+        }
+
         function escapeHtml(str) {
             return String(str)
                 .replace(/&/g, "&amp;")
@@ -883,25 +903,30 @@
             }, 1600);
         }
 
+        function formatIsoDate(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         // -------------------------------------------------------------
         // INITIALIZATION
         // -------------------------------------------------------------
-        window.onload = function() {
+        window.onload = async function() {
             lucide.createIcons();
             initDateSelects();
             initUrgencySelects();
             renderCategoryDropdowns();
             renderColorPaletteSelector();
-            initSampleData();
-            cleanupExpiredCompletedTasks();
             renderCategoriesOverview();
             renderColorsOverview();
             updateXpDisplay(false);
             renderTasks();
 
             // Periodically remove completed tasks older than 1 day
-            setInterval(() => {
-                if (cleanupExpiredCompletedTasks()) {
+            setInterval(async () => {
+                if (currentUser && await cleanupExpiredCompletedTasks()) {
                     renderTasks();
                 }
             }, 60 * 1000);
@@ -935,11 +960,119 @@
                     }
                 }
             });
+
+            // Restore active Supabase session if user is already logged in
+            if (supabaseClient) {
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session && session.user) {
+                        await loadUserCloudData(session.user);
+                    }
+                } catch (err) {
+                    console.error('Chyba při obnovení relace:', err);
+                }
+            }
         };
 
         // -------------------------------------------------------------
-        // LOCAL AUTHENTICATION LOGIC
+        // CLOUD DATA LOADING & AUTHENTICATION LOGIC
         // -------------------------------------------------------------
+        async function loadUserCloudData(user) {
+            if (!supabaseClient || !user) return;
+            currentUser = user;
+
+            try {
+                const [
+                    { data: profile, error: profileErr },
+                    { data: catRows, error: catErr },
+                    { data: colorRows, error: colorErr },
+                    { data: taskRows, error: taskErr },
+                    { data: subtaskRows, error: subtaskErr }
+                ] = await Promise.all([
+                    supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+                    supabaseClient.from('categories').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+                    supabaseClient.from('colors').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+                    supabaseClient.from('tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+                    supabaseClient.from('subtasks').select('*').eq('user_id', user.id).order('position', { ascending: true }).order('created_at', { ascending: true })
+                ]);
+
+                if (profileErr) throw profileErr;
+                if (catErr) throw catErr;
+                if (colorErr) throw colorErr;
+                if (taskErr) throw taskErr;
+                if (subtaskErr) throw subtaskErr;
+
+                const todayStr = formatIsoDate(new Date());
+                currentUsername = profile?.username || user.user_metadata?.username || 'Hráč';
+                userXp = Number(profile?.xp) || 0;
+
+                if (profile?.last_streak_date === todayStr) {
+                    dailyStreak = Number(profile?.daily_streak) || 0;
+                } else {
+                    dailyStreak = 0;
+                    if (profile && Number(profile.daily_streak) !== 0) {
+                        supabaseClient
+                            .from('profiles')
+                            .update({ daily_streak: 0 })
+                            .eq('id', user.id)
+                            .then(() => {});
+                    }
+                }
+
+                categories = (catRows || []).map(r => r.name);
+
+                const cloudColors = (colorRows || [])
+                    .map(r => ({ name: r.name, hex: String(r.hex).toUpperCase() }))
+                    .filter(c => !(c.hex === '#FFFFFF' && c.name.toLowerCase() === 'bílá'));
+
+                colorPalette = [
+                    { name: "Bílá", hex: "#FFFFFF" },
+                    ...cloudColors
+                ];
+                selectedTaskColor = colorPalette[1]?.hex || "#FFFFFF";
+
+                const subtasksByTask = {};
+                (subtaskRows || []).forEach(st => {
+                    if (!subtasksByTask[st.task_id]) subtasksByTask[st.task_id] = [];
+                    subtasksByTask[st.task_id].push({
+                        id: st.id,
+                        title: st.title,
+                        completed: Boolean(st.completed)
+                    });
+                });
+
+                tasks = (taskRows || []).map(t => ({
+                    id: t.id,
+                    title: t.title,
+                    category: t.category || 'Default',
+                    urgency: Number(t.urgency) || 3,
+                    dueDate: t.due_date,
+                    color: t.color || '#FFFFFF',
+                    completed: Boolean(t.completed),
+                    completedAt: t.completed_at ? Number(t.completed_at) : null,
+                    earnedXp: Number(t.earned_xp) || 0,
+                    countedInStreak: Boolean(t.counted_in_streak),
+                    subtasks: subtasksByTask[t.id] || []
+                }));
+
+                await cleanupExpiredCompletedTasks();
+
+                document.getElementById('currentUsernameDisplay').textContent = currentUsername;
+                renderCategoryDropdowns();
+                renderColorPaletteSelector();
+                renderCategoriesOverview();
+                renderColorsOverview();
+                updateXpDisplay(false);
+                renderTasks();
+
+                document.getElementById('mainContent').classList.remove('app-locked');
+                document.getElementById('authModal').classList.add('hidden');
+            } catch (err) {
+                console.error('Chyba při načítání dat z databáze:', err);
+                showToast('Nepodařilo se načíst data z cloudu.', 'warning', 'alert-triangle');
+            }
+        }
+
         window.switchAuthMode = function(mode) {
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
@@ -984,45 +1117,23 @@
             lucide.createIcons();
         };
 
-        window.handleLogin = function(e) {
+        window.handleLogin = async function(e) {
             e.preventDefault();
             const usernameInput = document.getElementById('loginUsername');
             const passwordInput = document.getElementById('loginPassword');
             const loginErrorMsg = document.getElementById('loginErrorMsg');
+            const loginErrorText = loginErrorMsg.querySelector('span');
+            const submitBtn = document.getElementById('loginSubmitBtn');
+            const submitText = document.getElementById('loginSubmitText');
 
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value;
-
-            const matchedUser = localUsers.find(u => u.username === username && u.password === password);
-            if (!matchedUser) {
+            if (!supabaseClient) {
+                loginErrorText.textContent = 'Doplň nejprve SUPABASE_URL a SUPABASE_PUBLISHABLE_KEY v souboru index.html.';
                 loginErrorMsg.classList.remove('hidden');
-                triggerInputError(usernameInput);
-                triggerInputError(passwordInput);
-                lucide.createIcons();
                 return;
             }
 
-            currentUser = matchedUser;
-            document.getElementById('currentUsernameDisplay').textContent = matchedUser.username;
-            document.getElementById('mainContent').classList.remove('app-locked');
-            document.getElementById('authModal').classList.add('hidden');
-
-            loginErrorMsg.classList.add('hidden');
-            passwordInput.value = '';
-            showToast(`Vítej zpět, ${matchedUser.username}!`, 'success', 'user');
-        };
-
-        window.handleRegister = function(e) {
-            e.preventDefault();
-            const usernameInput = document.getElementById('regUsername');
-            const passwordInput = document.getElementById('regPassword');
-            const codeInput = document.getElementById('regInviteCode');
-            const statusBox = document.getElementById('registerStatusMsg');
-            const statusText = document.getElementById('registerStatusText');
-
             const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
-            const inviteCode = codeInput.value.trim();
+            const password = passwordInput.value;
 
             if (!username) {
                 triggerInputError(usernameInput);
@@ -1032,22 +1143,163 @@
                 triggerInputError(passwordInput);
                 return;
             }
+
+            submitBtn.disabled = true;
+            submitText.textContent = 'Přihlašuji...';
+
+            try {
+                const internalEmail = usernameToInternalEmail(username);
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: internalEmail,
+                    password
+                });
+
+                if (error || !data?.user) {
+                    loginErrorText.textContent = 'Nesprávné přihlašovací jméno nebo heslo.';
+                    loginErrorMsg.classList.remove('hidden');
+                    triggerInputError(usernameInput);
+                    triggerInputError(passwordInput);
+                    lucide.createIcons();
+                    return;
+                }
+
+                loginErrorMsg.classList.add('hidden');
+                passwordInput.value = '';
+                await loadUserCloudData(data.user);
+                showToast(`Vítej zpět, ${currentUsername}!`, 'success', 'user');
+            } catch (err) {
+                loginErrorText.textContent = 'Chyba při komunikaci se serverem.';
+                loginErrorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Přihlásit se';
+            }
+        };
+
+        window.handleRegister = async function(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('regUsername');
+            const passwordInput = document.getElementById('regPassword');
+            const codeInput = document.getElementById('regInviteCode');
+            const statusBox = document.getElementById('registerStatusMsg');
+            const statusText = document.getElementById('registerStatusText');
+            const submitBtn = document.getElementById('registerSubmitBtn');
+            const submitText = document.getElementById('registerSubmitText');
+
+            if (!supabaseClient) {
+                statusText.textContent = 'Doplň nejprve SUPABASE_URL a SUPABASE_PUBLISHABLE_KEY v souboru index.html.';
+                statusBox.classList.remove('hidden');
+                return;
+            }
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            const inviteCode = codeInput.value.trim();
+
+            if (username.length < 2) {
+                triggerInputError(usernameInput);
+                statusText.textContent = 'Přihlašovací jméno musí mít alespoň 2 znaky.';
+                statusBox.classList.remove('hidden');
+                return;
+            }
+            if (password.length < 6) {
+                triggerInputError(passwordInput);
+                statusText.textContent = 'Heslo musí mít alespoň 6 znaků.';
+                statusBox.classList.remove('hidden');
+                return;
+            }
             if (!inviteCode) {
                 triggerInputError(codeInput);
                 statusText.textContent = 'Pro registraci je nutné zadat speciální zvací kód.';
                 statusBox.classList.remove('hidden');
-                lucide.createIcons();
                 return;
             }
 
-            statusText.textContent = 'Registrace se speciálním kódem bude aktivní po napojení na cloudové úložiště. Zatím se přihlas pomocí účtu Test.';
-            statusBox.classList.remove('hidden');
-            triggerInputError(codeInput);
-            lucide.createIcons();
+            submitBtn.disabled = true;
+            submitText.textContent = 'Ověřuji kód a vytvářím účet...';
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/register-user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_PUBLISHABLE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+                    },
+                    body: JSON.stringify({ username, password, inviteCode })
+                });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok || result.error) {
+                    const errMsg = result.error || 'Registrace se nezdařila.';
+                    statusText.textContent = errMsg;
+                    statusBox.classList.remove('hidden');
+                    if (errMsg.toLowerCase().includes('kód')) {
+                        triggerInputError(codeInput);
+                    } else if (errMsg.toLowerCase().includes('jméno')) {
+                        triggerInputError(usernameInput);
+                    } else if (errMsg.toLowerCase().includes('heslo')) {
+                        triggerInputError(passwordInput);
+                    }
+                    lucide.createIcons();
+                    return;
+                }
+
+                // Automatically sign in the newly created user
+                const internalEmail = usernameToInternalEmail(username);
+                const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
+                    email: internalEmail,
+                    password
+                });
+
+                if (signInError || !signInData?.user) {
+                    window.switchAuthMode('login');
+                    document.getElementById('loginUsername').value = username;
+                    showToast('Účet byl vytvořen! Nyní se přihlas.', 'success', 'user-plus');
+                    return;
+                }
+
+                usernameInput.value = '';
+                passwordInput.value = '';
+                codeInput.value = '';
+                statusBox.classList.add('hidden');
+
+                await loadUserCloudData(signInData.user);
+                showToast(`Účet ${currentUsername} byl úspěšně vytvořen!`, 'success', 'user-plus');
+            } catch (err) {
+                statusText.textContent = 'Nepodařilo se spojit se serverem. Zkus to prosím znovu.';
+                statusBox.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Vytvořit účet';
+            }
         };
 
-        window.logoutUser = function() {
+        window.logoutUser = async function() {
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.auth.signOut();
+                } catch (err) {
+                    console.error('Chyba při odhlášení:', err);
+                }
+            }
+
             currentUser = null;
+            currentUsername = '';
+            tasks = [];
+            categories = [];
+            colorPalette = [{ name: "Bílá", hex: "#FFFFFF" }];
+            userXp = 0;
+            dailyStreak = 0;
+
+            updateXpDisplay(false);
+            renderCategoryDropdowns();
+            renderColorPaletteSelector();
+            renderCategoriesOverview();
+            renderColorsOverview();
+            renderTasks();
+
             document.getElementById('mainContent').classList.add('app-locked');
             document.getElementById('loginUsername').value = '';
             document.getElementById('loginPassword').value = '';
@@ -1200,106 +1452,37 @@
         }
 
         // -------------------------------------------------------------
-        // SAMPLE INITIAL DATA
-        // -------------------------------------------------------------
-        function formatIsoDate(dateObj) {
-            const y = dateObj.getFullYear();
-            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const d = String(dateObj.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-        }
-
-        function initSampleData() {
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
-            const inTwoDays = new Date(today);
-            inTwoDays.setDate(today.getDate() + 2);
-
-            const todayStr = formatIsoDate(today);
-            const tomorrowStr = formatIsoDate(tomorrow);
-            const twoDaysStr = formatIsoDate(inTwoDays);
-
-            tasks = [
-                {
-                    id: 'sample-1',
-                    title: 'Dokončit návrh uživatelského rozhraní QuestLog',
-                    category: 'Projekt',
-                    urgency: 5,
-                    dueDate: todayStr,
-                    color: '#6366F1',
-                    completed: false,
-                    completedAt: null,
-                    earnedXp: 0,
-                    countedInStreak: false,
-                    subtasks: [
-                        { id: 'st-1', title: 'Sjednotit tmavou paletu a zaoblení karet', completed: true },
-                        { id: 'st-2', title: 'Otestovat plynulé animace podúkolů', completed: true },
-                        { id: 'st-3', title: 'Připravit napojení na cloudové úložiště', completed: false }
-                    ]
-                },
-                {
-                    id: 'sample-2',
-                    title: 'Příprava na zkoušku z databázových systémů',
-                    category: 'Škola',
-                    urgency: 4,
-                    dueDate: tomorrowStr,
-                    color: '#F59E0B',
-                    completed: false,
-                    completedAt: null,
-                    earnedXp: 0,
-                    countedInStreak: false,
-                    subtasks: [
-                        { id: 'st-4', title: 'Projít SQL dotazy a indexování', completed: false },
-                        { id: 'st-5', title: 'Procvičit normální formy a transakce', completed: false }
-                    ]
-                },
-                {
-                    id: 'sample-3',
-                    title: 'Nákup potravin a vitamínů na celý týden',
-                    category: 'Zdraví',
-                    urgency: 2,
-                    dueDate: todayStr,
-                    color: '#10B981',
-                    completed: true,
-                    completedAt: Date.now(),
-                    earnedXp: 40,
-                    countedInStreak: true,
-                    subtasks: []
-                },
-                {
-                    id: 'sample-4',
-                    title: 'Týdenní synchronizace úkolů a priorit',
-                    category: 'Práce',
-                    urgency: 3,
-                    dueDate: twoDaysStr,
-                    color: '#06B6D4',
-                    completed: false,
-                    completedAt: null,
-                    earnedXp: 0,
-                    countedInStreak: false,
-                    subtasks: []
-                }
-            ];
-            dailyStreak = 1;
-        }
-
-        // -------------------------------------------------------------
         // AUTO-CLEANUP OF COMPLETED TASKS AFTER 1 DAY
         // -------------------------------------------------------------
-        function cleanupExpiredCompletedTasks() {
+        async function cleanupExpiredCompletedTasks() {
             const now = Date.now();
-            const initialCount = tasks.length;
+            const expiredIds = [];
 
             tasks = tasks.filter(task => {
                 if (!task.completed) return true;
-                if (typeof task.completedAt === 'number') {
-                    return (now - task.completedAt) < COMPLETED_TASK_TTL_MS;
+                const isExpired = typeof task.completedAt === 'number'
+                    ? (now - task.completedAt) >= COMPLETED_TASK_TTL_MS
+                    : getDaysDifferenceFromToday(task.dueDate) <= -1;
+
+                if (isExpired) {
+                    expiredIds.push(task.id);
+                    return false;
                 }
-                return getDaysDifferenceFromToday(task.dueDate) > -1;
+                return true;
             });
 
-            return tasks.length !== initialCount;
+            if (expiredIds.length > 0 && currentUser && supabaseClient) {
+                try {
+                    await supabaseClient
+                        .from('tasks')
+                        .delete()
+                        .in('id', expiredIds);
+                } catch (err) {
+                    console.error('Chyba při automatickém mazání starých splněných úkolů:', err);
+                }
+            }
+
+            return expiredIds.length > 0;
         }
 
         // -------------------------------------------------------------
@@ -1329,7 +1512,7 @@
         };
 
         // -------------------------------------------------------------
-        // CATEGORIES MANAGEMENT
+        // CATEGORIES MANAGEMENT (CLOUD SYNCED)
         // -------------------------------------------------------------
         function renderCategoryDropdowns() {
             const currentTaskCat = document.getElementById('taskCategorySelect').value || 'Default';
@@ -1386,8 +1569,10 @@
             }
         }
 
-        window.createNewCategory = function(e) {
+        window.createNewCategory = async function(e) {
             e.preventDefault();
+            if (!currentUser || !supabaseClient) return;
+
             const input = document.getElementById('newCatName');
             const name = input.value.trim();
             if (!name) return;
@@ -1406,12 +1591,21 @@
             renderCategoryDropdowns();
             renderCategoriesOverview(name);
             showToast(`Kategorie "${name}" byla přidána.`, 'success', 'tag');
+
+            const { error } = await supabaseClient
+                .from('categories')
+                .insert({ user_id: currentUser.id, name });
+
+            if (error) {
+                console.error('Chyba při ukládání kategorie:', error);
+                showToast('Nepodařilo se uložit kategorii do cloudu.', 'warning', 'alert-triangle');
+            }
         };
 
         window.requestDeleteCategory = function(catName) {
             openConfirmModal(`Opravdu chceš smazat kategorii "${catName}"? Úkoly v této kategorii se přesunou do Default.`, () => {
                 const itemEl = document.querySelector(`[data-cat-item="${CSS.escape(catName)}"]`);
-                const finalizeDelete = () => {
+                const finalizeDelete = async () => {
                     categories = categories.filter(c => c !== catName);
                     tasks.forEach(t => {
                         if (t.category === catName) t.category = 'Default';
@@ -1420,6 +1614,13 @@
                     renderCategoriesOverview();
                     renderTasks();
                     showToast(`Kategorie "${catName}" byla smazána.`, 'info', 'tag');
+
+                    if (currentUser && supabaseClient) {
+                        await Promise.all([
+                            supabaseClient.from('categories').delete().eq('user_id', currentUser.id).eq('name', catName),
+                            supabaseClient.from('tasks').update({ category: 'Default' }).eq('user_id', currentUser.id).eq('category', catName)
+                        ]);
+                    }
                 };
 
                 if (itemEl) {
@@ -1434,7 +1635,7 @@
         };
 
         // -------------------------------------------------------------
-        // COLOR PALETTE MANAGEMENT
+        // COLOR PALETTE MANAGEMENT (CLOUD SYNCED)
         // -------------------------------------------------------------
         function renderColorPaletteSelector() {
             const container = document.getElementById('colorPaletteSelect');
@@ -1495,8 +1696,10 @@
             }
         }
 
-        window.createNewColor = function(e) {
+        window.createNewColor = async function(e) {
             e.preventDefault();
+            if (!currentUser || !supabaseClient) return;
+
             const nameInput = document.getElementById('newColorName');
             const picker = document.getElementById('newColorPicker');
             const name = nameInput.value.trim();
@@ -1523,12 +1726,21 @@
             renderColorPaletteSelector();
             renderColorsOverview(hex);
             showToast(`Barva "${name}" byla přidána.`, 'success', 'palette');
+
+            const { error } = await supabaseClient
+                .from('colors')
+                .insert({ user_id: currentUser.id, name, hex });
+
+            if (error) {
+                console.error('Chyba při ukládání barvy:', error);
+                showToast('Nepodařilo se uložit barvu do cloudu.', 'warning', 'alert-triangle');
+            }
         };
 
         window.requestDeleteColor = function(hex, colorName) {
             openConfirmModal(`Opravdu chceš smazat barvu "${colorName}"?`, () => {
                 const itemEl = document.querySelector(`[data-color-hex="${CSS.escape(hex)}"]`);
-                const finalizeDelete = () => {
+                const finalizeDelete = async () => {
                     colorPalette = colorPalette.filter(c => c.hex.toUpperCase() !== hex.toUpperCase());
                     if (selectedTaskColor.toUpperCase() === hex.toUpperCase()) {
                         selectedTaskColor = colorPalette[0]?.hex || '#FFFFFF';
@@ -1542,6 +1754,13 @@
                     renderColorsOverview();
                     renderTasks();
                     showToast(`Barva "${colorName}" byla smazána.`, 'info', 'palette');
+
+                    if (currentUser && supabaseClient) {
+                        await Promise.all([
+                            supabaseClient.from('colors').delete().eq('user_id', currentUser.id).eq('hex', hex),
+                            supabaseClient.from('tasks').update({ color: '#FFFFFF' }).eq('user_id', currentUser.id).eq('color', hex)
+                        ]);
+                    }
                 };
 
                 if (itemEl) {
@@ -1627,10 +1846,12 @@
         }
 
         // -------------------------------------------------------------
-        // TASK CREATION
+        // TASK CREATION (CLOUD SYNCED)
         // -------------------------------------------------------------
-        window.createNewTask = function(e) {
+        window.createNewTask = async function(e) {
             e.preventDefault();
+            if (!currentUser || !supabaseClient) return;
+
             const titleInput = document.getElementById('taskTitle');
             const title = titleInput.value.trim();
             if (!title) return;
@@ -1654,7 +1875,13 @@
                 return;
             }
 
-            const newTaskId = 'task-' + Date.now();
+            const newTaskId = crypto.randomUUID();
+            const generatedSubtasks = tempSubtasks.map(stTitle => ({
+                id: crypto.randomUUID(),
+                title: stTitle,
+                completed: false
+            }));
+
             const newTask = {
                 id: newTaskId,
                 title,
@@ -1666,11 +1893,7 @@
                 completedAt: null,
                 earnedXp: 0,
                 countedInStreak: false,
-                subtasks: tempSubtasks.map((stTitle, index) => ({
-                    id: `st-${Date.now()}-${index}`,
-                    title: stTitle,
-                    completed: false
-                }))
+                subtasks: generatedSubtasks
             };
 
             tasks.push(newTask);
@@ -1680,6 +1903,44 @@
             renderTempSubtasks();
             renderTasks(newTaskId);
             showToast('Úkol byl přidán.', 'success', 'scroll');
+
+            try {
+                const { error: taskInsertErr } = await supabaseClient
+                    .from('tasks')
+                    .insert({
+                        id: newTaskId,
+                        user_id: currentUser.id,
+                        title,
+                        category,
+                        urgency,
+                        due_date: dueDate,
+                        color: selectedTaskColor,
+                        completed: false,
+                        completed_at: null,
+                        earned_xp: 0,
+                        counted_in_streak: false
+                    });
+
+                if (taskInsertErr) throw taskInsertErr;
+
+                if (generatedSubtasks.length > 0) {
+                    const { error: subInsertErr } = await supabaseClient
+                        .from('subtasks')
+                        .insert(generatedSubtasks.map((st, idx) => ({
+                            id: st.id,
+                            task_id: newTaskId,
+                            user_id: currentUser.id,
+                            title: st.title,
+                            completed: false,
+                            position: idx
+                        })));
+
+                    if (subInsertErr) throw subInsertErr;
+                }
+            } catch (err) {
+                console.error('Chyba při ukládání úkolu do cloudu:', err);
+                showToast('Nepodařilo se uložit úkol do cloudu.', 'warning', 'alert-triangle');
+            }
         };
 
         // -------------------------------------------------------------
@@ -1748,6 +2009,46 @@
             };
         }
 
+        async function syncTaskAndProfileCompletion(task, updateSubtasksState = null) {
+            if (!currentUser || !supabaseClient) return;
+            const todayStr = formatIsoDate(new Date());
+
+            try {
+                const ops = [
+                    supabaseClient
+                        .from('tasks')
+                        .update({
+                            completed: task.completed,
+                            completed_at: task.completedAt,
+                            earned_xp: task.earnedXp,
+                            counted_in_streak: task.countedInStreak
+                        })
+                        .eq('id', task.id),
+                    supabaseClient
+                        .from('profiles')
+                        .update({
+                            xp: userXp,
+                            daily_streak: dailyStreak,
+                            last_streak_date: todayStr
+                        })
+                        .eq('id', currentUser.id)
+                ];
+
+                if (typeof updateSubtasksState === 'boolean' && Array.isArray(task.subtasks) && task.subtasks.length > 0) {
+                    ops.push(
+                        supabaseClient
+                            .from('subtasks')
+                            .update({ completed: updateSubtasksState })
+                            .eq('task_id', task.id)
+                    );
+                }
+
+                await Promise.all(ops);
+            } catch (err) {
+                console.error('Chyba při synchronizaci splnění úkolu:', err);
+            }
+        }
+
         // -------------------------------------------------------------
         // FLIP SMOOTH REORDERING & TASK COMPLETION
         // -------------------------------------------------------------
@@ -1808,10 +2109,10 @@
                     updateXpDisplay(true, true);
                     renderTasks();
                     playFlipAnimation(oldPositions);
+                    syncTaskAndProfileCompletion(task, true);
                 };
 
                 if (cardEl) {
-                    // Fill progress bar immediately if subtasks exist
                     const fillBar = cardEl.querySelector('.subtask-progress-fill');
                     if (fillBar) fillBar.style.width = '100%';
 
@@ -1823,7 +2124,6 @@
                     finishCompletion();
                 }
             } else {
-                // Uncompleting task: reset subtasks to 0%, subtract earned XP & lower daily streak
                 const oldPositions = captureTaskCardPositions();
                 task.completed = false;
                 task.completedAt = null;
@@ -1842,6 +2142,7 @@
                 updateXpDisplay(true, false);
                 renderTasks();
                 playFlipAnimation(oldPositions);
+                syncTaskAndProfileCompletion(task, false);
 
                 const updatedCard = document.querySelector(`[data-task-id="${taskId}"]`);
                 if (updatedCard) {
@@ -1855,7 +2156,6 @@
             const task = tasks.find(t => t.id === taskId);
             if (!task || !Array.isArray(task.subtasks)) return;
 
-            // If entire task is completed, individual subtasks cannot be unchecked directly
             if (task.completed) {
                 showToast('Nejprve odškrtni celý úkol nahoře.', 'info', 'scroll');
                 return;
@@ -1870,10 +2170,16 @@
 
             subtask.completed = !subtask.completed;
 
-            const newCompletedCount = task.subtasks.filter(s => s.completed).length;
-            const newPercent = totalCount > 0 ? Math.round((newCompletedCount / totalCount) * 100) : 0;
+            if (currentUser && supabaseClient) {
+                supabaseClient
+                    .from('subtasks')
+                    .update({ completed: subtask.completed })
+                    .eq('id', subtask.id)
+                    .then(() => {});
+            }
 
-            // Check if all subtasks are now completed
+            const newCompletedCount = task.subtasks.filter(s => s.completed).length;
+
             if (newCompletedCount === totalCount && totalCount > 0) {
                 renderTasks(null, { [taskId]: prevPercent });
                 const cardEl = document.querySelector(`[data-task-id="${taskId}"]`);
@@ -1901,6 +2207,7 @@
                     updateXpDisplay(true, true);
                     renderTasks();
                     playFlipAnimation(oldPositions);
+                    syncTaskAndProfileCompletion(task, null);
                 }, 900);
             } else {
                 renderTasks(null, { [taskId]: prevPercent });
@@ -1913,10 +2220,14 @@
 
             openConfirmModal(`Opravdu chceš smazat úkol "${task.title}"?`, () => {
                 const cardEl = document.querySelector(`[data-task-id="${taskId}"]`);
-                const finalizeTaskDelete = () => {
+                const finalizeTaskDelete = async () => {
                     tasks = tasks.filter(t => t.id !== taskId);
                     renderTasks();
                     showToast('Úkol byl smazán.', 'info', 'scroll');
+
+                    if (currentUser && supabaseClient) {
+                        await supabaseClient.from('tasks').delete().eq('id', taskId);
+                    }
                 };
 
                 if (cardEl) {
@@ -1931,7 +2242,7 @@
         };
 
         // -------------------------------------------------------------
-        // EDIT TITLE & TASK COLOR MODALS
+        // EDIT TITLE & TASK COLOR MODALS (CLOUD SYNCED)
         // -------------------------------------------------------------
         window.openEditTitleModal = function(type, taskId, subtaskId = null) {
             const task = tasks.find(t => t.id === taskId);
@@ -1957,18 +2268,28 @@
             currentEditTarget = null;
         };
 
-        window.saveTitleEdit = function() {
+        window.saveTitleEdit = async function() {
             if (!currentEditTarget) return;
             const newTitle = document.getElementById('editTitleInput').value.trim();
             if (!newTitle) return;
 
-            const task = tasks.find(t => t.id === currentEditTarget.taskId);
+            const { type, taskId, subtaskId } = currentEditTarget;
+            const task = tasks.find(t => t.id === taskId);
+
             if (task) {
-                if (currentEditTarget.type === 'task') {
+                if (type === 'task') {
                     task.title = newTitle;
-                } else if (currentEditTarget.type === 'subtask') {
-                    const st = task.subtasks.find(s => s.id === currentEditTarget.subtaskId);
-                    if (st) st.title = newTitle;
+                    if (currentUser && supabaseClient) {
+                        supabaseClient.from('tasks').update({ title: newTitle }).eq('id', taskId).then(() => {});
+                    }
+                } else if (type === 'subtask') {
+                    const st = task.subtasks.find(s => s.id === subtaskId);
+                    if (st) {
+                        st.title = newTitle;
+                        if (currentUser && supabaseClient) {
+                            supabaseClient.from('subtasks').update({ title: newTitle }).eq('id', subtaskId).then(() => {});
+                        }
+                    }
                 }
                 renderTasks();
                 showToast('Název byl upraven.', 'success', 'scroll');
@@ -2006,10 +2327,14 @@
 
         window.applyNewTaskColor = function(hex) {
             if (!currentTargetTaskForColor) return;
-            const task = tasks.find(t => t.id === currentTargetTaskForColor);
+            const taskId = currentTargetTaskForColor;
+            const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.color = hex;
                 renderTasks();
+                if (currentUser && supabaseClient) {
+                    supabaseClient.from('tasks').update({ color: hex }).eq('id', taskId).then(() => {});
+                }
             }
             window.closeColorModal();
         };
@@ -2174,7 +2499,6 @@
 
             lucide.createIcons();
 
-            // Animate progress bar width from previous percent to new percent when subtasks change
             Object.keys(progressStartOverrides).forEach(tId => {
                 const task = tasks.find(t => t.id === tId);
                 const card = container.querySelector(`[data-task-id="${tId}"]`);
@@ -2231,7 +2555,6 @@
                     ? progressStartOverrides[task.id]
                     : targetPct;
 
-                // Sort subtasks: incomplete first, completed moved to bottom
                 const sortedSubtasks = task.subtasks.slice().sort((a, b) => {
                     if (a.completed === b.completed) return 0;
                     return a.completed ? 1 : -1;
