@@ -1,0 +1,2329 @@
+<!DOCTYPE html>
+<html lang="cs" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuestLog</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='8' fill='%23151C2C' stroke='%236366F1' stroke-opacity='0.45' stroke-width='1.5'/%3E%3Cg transform='translate(4,4)' fill='none' stroke='%23818CF8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='14.5 17.5 3 6 3 3 6 3 17.5 14.5'/%3E%3Cline x1='13' x2='19' y1='19' y2='13'/%3E%3Cline x1='16' x2='20' y1='16' y2='20'/%3E%3Cline x1='19' x2='21' y1='21' y2='19'/%3E%3Cpolyline points='14.5 6.5 18 3 21 3 21 6 17.5 9.5'/%3E%3Cline x1='5' x2='14' y1='14' y2='5'/%3E%3Cline x1='7' x2='17' y1='17' y2='7'/%3E%3C/g%3E%3C/svg%3E">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        darkBg: '#0B0F17',
+                        cardBg: '#151C2C',
+                        cardBorder: '#1E293B',
+                        accent: '#6366F1'
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            background-color: #0B0F17;
+            color: #F8FAFC;
+        }
+
+        /* Custom Modern Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E293B;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366F1;
+        }
+
+        /* Custom Rounded Dropdown Menus */
+        .custom-select-menu {
+            scrollbar-width: thin;
+            scrollbar-color: #1E293B #0F172A;
+        }
+        .custom-select-menu::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-select-menu::-webkit-scrollbar-track {
+            background: #0F172A;
+            border-radius: 9999px;
+        }
+        .custom-select-menu::-webkit-scrollbar-thumb {
+            background: #1E293B;
+            border-radius: 9999px;
+        }
+        .custom-select-menu::-webkit-scrollbar-thumb:hover {
+            background: #6366F1;
+        }
+
+        /* Color Swatch Wrapper */
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.75rem;
+        }
+
+        /* Deadline Glow Animations */
+        @keyframes overdueGlow {
+            0%, 100% { border-color: rgba(244, 63, 94, 0.4); box-shadow: 0 0 10px rgba(244, 63, 94, 0.15); }
+            50% { border-color: rgba(244, 63, 94, 0.9); box-shadow: 0 0 20px rgba(244, 63, 94, 0.4); }
+        }
+
+        @keyframes closeDeadlineGlow {
+            0%, 100% { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 0 10px rgba(245, 158, 11, 0.15); }
+            50% { border-color: rgba(245, 158, 11, 0.9); box-shadow: 0 0 20px rgba(245, 158, 11, 0.35); }
+        }
+
+        /* Subtle yellow glow 1 day before deadline */
+        @keyframes closeDeadlineGlowDayBefore {
+            0%, 100% { border-color: rgba(245, 158, 11, 0.2); box-shadow: 0 0 6px rgba(245, 158, 11, 0.06); }
+            50% { border-color: rgba(245, 158, 11, 0.48); box-shadow: 0 0 12px rgba(245, 158, 11, 0.16); }
+        }
+
+        /* Barely noticeable yellow glow 2 days before deadline */
+        @keyframes closeDeadlineGlowTwoDaysBefore {
+            0%, 100% { border-color: rgba(245, 158, 11, 0.08); box-shadow: 0 0 2px rgba(245, 158, 11, 0.02); }
+            50% { border-color: rgba(245, 158, 11, 0.22); box-shadow: 0 0 6px rgba(245, 158, 11, 0.07); }
+        }
+
+        /* XP Badge Green & Red Flash Animations */
+        @keyframes greenGlow {
+            0%, 100% {
+                box-shadow: 0 0 0px rgba(34, 197, 94, 0);
+            }
+            40% {
+                box-shadow: 0 0 24px rgba(34, 197, 94, 0.65);
+                border-color: rgba(34, 197, 94, 0.7);
+                background-color: rgba(34, 197, 94, 0.14);
+            }
+        }
+
+        @keyframes redGlow {
+            0%, 100% {
+                box-shadow: 0 0 0px rgba(244, 63, 94, 0);
+            }
+            40% {
+                box-shadow: 0 0 24px rgba(244, 63, 94, 0.65);
+                border-color: rgba(244, 63, 94, 0.7);
+                background-color: rgba(244, 63, 94, 0.14);
+            }
+        }
+
+        @keyframes greenTextFlash {
+            0%, 100% { color: #e0e7ff; }
+            35%, 65% { color: #4ade80; }
+        }
+
+        @keyframes greenIconFlash {
+            0%, 100% {
+                color: #818cf8;
+                fill: rgba(129, 140, 248, 0.25);
+            }
+            35%, 65% {
+                color: #4ade80;
+                fill: rgba(74, 222, 128, 0.32);
+            }
+        }
+
+        @keyframes redTextFlash {
+            0%, 100% { color: #e0e7ff; }
+            35%, 65% { color: #fb7185; }
+        }
+
+        @keyframes redIconFlash {
+            0%, 100% {
+                color: #818cf8;
+                fill: rgba(129, 140, 248, 0.25);
+            }
+            35%, 65% {
+                color: #fb7185;
+                fill: rgba(251, 113, 133, 0.32);
+            }
+        }
+
+        @keyframes redShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .task-overdue {
+            animation: overdueGlow 2.2s infinite ease-in-out;
+        }
+
+        .task-close-deadline {
+            animation: closeDeadlineGlow 2.2s infinite ease-in-out;
+        }
+
+        .task-close-deadline-1 {
+            animation: closeDeadlineGlowDayBefore 2.4s infinite ease-in-out;
+        }
+
+        .task-close-deadline-2 {
+            animation: closeDeadlineGlowTwoDaysBefore 2.6s infinite ease-in-out;
+        }
+
+        .animate-green-glow {
+            animation: greenGlow 0.55s ease-in-out;
+        }
+
+        .animate-green-glow #userXp {
+            animation: greenTextFlash 0.55s ease-in-out;
+        }
+
+        .animate-green-glow svg {
+            animation: greenIconFlash 0.55s ease-in-out;
+        }
+
+        .animate-red-shake {
+            animation: redShake 0.4s ease-in-out;
+        }
+
+        .animate-red-glow-shake {
+            animation: redGlow 0.55s ease-in-out, redShake 0.4s ease-in-out;
+        }
+
+        .animate-red-glow-shake #userXp {
+            animation: redTextFlash 0.55s ease-in-out;
+        }
+
+        .animate-red-glow-shake svg {
+            animation: redIconFlash 0.55s ease-in-out;
+        }
+
+        /* Exponential-like smooth progress bar fill (fast start, gradual slowdown) */
+        .subtask-progress-fill {
+            transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease;
+        }
+
+        /* Task Completion Green Flash (0.5s or 0.9s before gliding down) */
+        @keyframes taskCompleteFlash {
+            0% {
+                border-color: rgba(16, 185, 129, 0.95);
+                box-shadow: 0 0 26px rgba(16, 185, 129, 0.55);
+                background-color: rgba(16, 185, 129, 0.14);
+            }
+            55% {
+                border-color: rgba(52, 211, 153, 1);
+                box-shadow: 0 0 34px rgba(16, 185, 129, 0.65);
+                background-color: rgba(16, 185, 129, 0.18);
+            }
+            100% {
+                border-color: rgba(16, 185, 129, 0.55);
+                box-shadow: 0 0 14px rgba(16, 185, 129, 0.22);
+                background-color: #151C2C;
+            }
+        }
+
+        .task-complete-flash {
+            animation: taskCompleteFlash 0.5s ease-out forwards;
+        }
+
+        .task-complete-flash-long {
+            animation: taskCompleteFlash 0.9s ease-out forwards;
+        }
+
+        /* Task Uncomplete Subtle Wake-up Pulse */
+        @keyframes taskUncompletePulse {
+            0% {
+                border-color: rgba(99, 102, 241, 0.85);
+                box-shadow: 0 0 22px rgba(99, 102, 241, 0.4);
+            }
+            100% {
+                border-color: rgba(30, 41, 59, 0.8);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            }
+        }
+
+        .task-uncomplete-pulse {
+            animation: taskUncompletePulse 0.65s ease-out;
+        }
+
+        /* Task Creation Smooth Entrance */
+        @keyframes taskEnterAnim {
+            0% {
+                opacity: 0;
+                transform: translateY(-14px) scale(0.96);
+                border-color: rgba(99, 102, 241, 0.85);
+                box-shadow: 0 0 26px rgba(99, 102, 241, 0.45);
+            }
+            70% {
+                opacity: 1;
+                transform: translateY(2px) scale(1.005);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .task-enter-anim {
+            animation: taskEnterAnim 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Task Deletion Smooth Exit */
+        .task-exit-anim {
+            animation: none !important;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease !important;
+            opacity: 0 !important;
+            transform: translateX(24px) scale(0.95) !important;
+            border-color: rgba(244, 63, 94, 0.85) !important;
+            pointer-events: none;
+        }
+
+        /* Category & Color Item Entrance / Exit Animations */
+        @keyframes itemEnterAnim {
+            0% {
+                opacity: 0;
+                transform: translateY(-6px) scale(0.92);
+                border-color: rgba(99, 102, 241, 0.85);
+                box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .item-enter-anim {
+            animation: itemEnterAnim 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .item-exit-anim {
+            animation: none !important;
+            transition: opacity 0.26s cubic-bezier(0.4, 0, 0.2, 1), transform 0.26s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease !important;
+            opacity: 0 !important;
+            transform: scale(0.88) translateX(10px) !important;
+            border-color: rgba(244, 63, 94, 0.85) !important;
+            pointer-events: none;
+        }
+
+        /* Locked / Blurred Background State Before Login */
+        #mainContent {
+            transition: filter 0.35s ease, opacity 0.35s ease;
+        }
+
+        #mainContent.app-locked {
+            filter: blur(5px);
+            opacity: 0.55;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        @keyframes authCardAppear {
+            0% {
+                opacity: 0;
+                transform: translateY(10px) scale(0.97);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .auth-card-anim {
+            animation: authCardAppear 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#0B0F17] text-slate-100 antialiased selection:bg-indigo-500 selection:text-white pb-16">
+
+    <!-- MAIN CONTAINER -->
+    <div id="mainContent" class="max-w-5xl mx-auto px-4 py-8 space-y-6 app-locked">
+        
+        <!-- HEADER WITH XP BADGE & USER ACCOUNT -->
+        <header class="bg-[#151C2C] border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3.5">
+                <div class="p-3 bg-gradient-to-br from-indigo-500/20 to-violet-500/10 text-indigo-400 rounded-2xl border border-indigo-500/30 shadow-lg shadow-indigo-500/10">
+                    <i data-lucide="swords" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        QuestLog
+                    </h1>
+                </div>
+            </div>
+
+            <!-- RIGHT HEADER CONTROLS: XP & USER PROFILE -->
+            <div class="flex items-center space-x-2.5 sm:space-x-3">
+                <!-- XP STATS BADGE (Grayish-purple theme, numeric only) -->
+                <div id="xpBadgeBox" class="flex items-center space-x-2 px-3.5 sm:px-4 py-2 bg-indigo-500/[0.07] border border-indigo-400/15 rounded-xl text-slate-200 font-extrabold text-xs shadow-md transition-transform duration-200 transform hover:scale-105 hover:border-indigo-400/30">
+                    <i data-lucide="zap" class="w-4 h-4 text-indigo-400 fill-indigo-400/25"></i>
+                    <span id="userXp" class="text-sm tracking-tight text-indigo-100">140</span>
+                </div>
+
+                <!-- LOGGED-IN USER PILL + LOGOUT BUTTON -->
+                <div id="userAccountBox" class="flex items-center bg-[#0B0F17]/90 border border-slate-800 rounded-xl pl-3 pr-1.5 py-1.5 shadow-md space-x-2">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-6 h-6 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <span id="currentUsernameDisplay" class="text-xs font-bold text-slate-200 max-w-[100px] truncate">Test</span>
+                    </div>
+                    <div class="h-4 w-px bg-slate-800"></div>
+                    <button type="button" onclick="window.logoutUser()" title="Odhlásit se"
+                        class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition flex items-center justify-center">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- CREATION PANEL (3 TABS) -->
+        <section class="bg-[#151C2C] border border-slate-800/80 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-5">
+            <!-- Tabs Header -->
+            <div class="flex space-x-2 border-b border-slate-800/80 pb-3">
+                <button type="button" id="tabQuestBtn" onclick="window.switchCreationTab('quest')" class="flex items-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition">
+                    <i data-lucide="scroll" class="w-4 h-4"></i>
+                    <span>Nový úkol</span>
+                </button>
+                <button type="button" id="tabCategoryBtn" onclick="window.switchCreationTab('category')" class="flex items-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                    <i data-lucide="tag" class="w-4 h-4"></i>
+                    <span>Nová kategorie</span>
+                </button>
+                <button type="button" id="tabColorBtn" onclick="window.switchCreationTab('color')" class="flex items-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition">
+                    <i data-lucide="palette" class="w-4 h-4"></i>
+                    <span>Nová barva</span>
+                </button>
+            </div>
+
+            <!-- TAB 1: NOVÝ ÚKOL -->
+            <div id="tabQuestContent" class="space-y-4">
+                <form id="createQuestForm" onsubmit="window.createNewTask(event)" class="space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <!-- Task Title (Span 2) -->
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Název úkolu</label>
+                            <input type="text" id="taskTitle" required placeholder="Co je potřeba udělat?" oninput="window.clearInputError('taskTitle')" class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                        </div>
+
+                        <!-- Category Selection (Col 3) -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Kategorie</label>
+                            <div class="relative custom-select-wrapper" data-select-id="taskCategorySelect">
+                                <input type="hidden" id="taskCategorySelect" value="Default">
+                                <button type="button" onclick="window.toggleCustomSelect('taskCategorySelect')" class="w-full bg-[#0B0F17] border border-slate-800 hover:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 text-xs text-white text-left focus:outline-none focus:border-indigo-500 transition cursor-pointer flex items-center justify-between relative">
+                                    <span id="taskCategorySelectLabel" class="truncate">Default</span>
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 pointer-events-none transition-transform duration-200" id="taskCategorySelectChevron"></i>
+                                </button>
+                                <div id="taskCategorySelectMenu" class="custom-select-menu hidden absolute left-0 right-0 mt-1.5 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl p-1 max-h-48 overflow-y-auto z-40 space-y-0.5">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Urgency Selection (Col 4) -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Naléhavost</label>
+                            <div class="relative custom-select-wrapper" data-select-id="taskUrgencySelect">
+                                <input type="hidden" id="taskUrgencySelect" value="3">
+                                <button type="button" onclick="window.toggleCustomSelect('taskUrgencySelect')" class="w-full bg-[#0B0F17] border border-slate-800 hover:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 text-xs text-white text-left focus:outline-none focus:border-indigo-500 transition cursor-pointer flex items-center justify-between relative">
+                                    <span id="taskUrgencySelectLabel" class="truncate">★ 3 (Normální)</span>
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 pointer-events-none transition-transform duration-200" id="taskUrgencySelectChevron"></i>
+                                </button>
+                                <div id="taskUrgencySelectMenu" class="custom-select-menu hidden absolute left-0 right-0 mt-1.5 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl p-1 max-h-48 overflow-y-auto z-40 space-y-0.5">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Date (Col 1-2, compact) and Color Swatches (Col 3-4) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-start">
+                        <!-- Date Selectors (Col 1-2 - Compact & left-aligned) -->
+                        <div class="sm:col-span-2 flex items-center space-x-2">
+                            <div class="w-[4.75rem] flex-shrink-0">
+                                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Den</label>
+                                <div class="relative custom-select-wrapper" data-select-id="taskDaySelect">
+                                    <input type="hidden" id="taskDaySelect" value="1">
+                                    <button type="button" onclick="window.toggleCustomSelect('taskDaySelect')" class="w-full bg-[#0B0F17] border border-slate-800 hover:border-slate-700 rounded-xl pl-3 pr-7 py-2.5 text-xs text-white text-left focus:outline-none focus:border-indigo-500 transition cursor-pointer flex items-center relative">
+                                        <span id="taskDaySelectLabel" class="truncate text-left">1.</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-2 pointer-events-none transition-transform duration-200" id="taskDaySelectChevron"></i>
+                                    </button>
+                                    <div id="taskDaySelectMenu" class="custom-select-menu hidden absolute left-0 right-0 mt-1.5 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl p-1 max-h-48 overflow-y-auto z-40 space-y-0.5">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-[7.25rem] flex-shrink-0">
+                                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Měsíc</label>
+                                <div class="relative custom-select-wrapper" data-select-id="taskMonthSelect">
+                                    <input type="hidden" id="taskMonthSelect" value="1">
+                                    <button type="button" onclick="window.toggleCustomSelect('taskMonthSelect')" class="w-full bg-[#0B0F17] border border-slate-800 hover:border-slate-700 rounded-xl pl-3 pr-7 py-2.5 text-xs text-white text-left focus:outline-none focus:border-indigo-500 transition cursor-pointer flex items-center relative">
+                                        <span id="taskMonthSelectLabel" class="truncate text-left">Leden</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-2 pointer-events-none transition-transform duration-200" id="taskMonthSelectChevron"></i>
+                                    </button>
+                                    <div id="taskMonthSelectMenu" class="custom-select-menu hidden absolute left-0 right-0 mt-1.5 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl p-1 max-h-48 overflow-y-auto z-40 space-y-0.5">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-[5.5rem] flex-shrink-0">
+                                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Rok</label>
+                                <div class="relative custom-select-wrapper" data-select-id="taskYearSelect">
+                                    <input type="hidden" id="taskYearSelect" value="2026">
+                                    <button type="button" onclick="window.toggleCustomSelect('taskYearSelect')" class="w-full bg-[#0B0F17] border border-slate-800 hover:border-slate-700 rounded-xl pl-3 pr-7 py-2.5 text-xs text-white text-left focus:outline-none focus:border-indigo-500 transition cursor-pointer flex items-center relative">
+                                        <span id="taskYearSelectLabel" class="truncate text-left">2026</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-2 pointer-events-none transition-transform duration-200" id="taskYearSelectChevron"></i>
+                                    </button>
+                                    <div id="taskYearSelectMenu" class="custom-select-menu hidden absolute left-0 right-0 mt-1.5 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl p-1 max-h-48 overflow-y-auto z-40 space-y-0.5">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Color Swatches (Col 3-4) -->
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Barva</label>
+                            <div id="colorPaletteSelect" class="flex flex-wrap items-center gap-3 py-2 px-1.5">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subtasks Input + Button -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-400">Podúkoly</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="subtaskInput" placeholder="Název podúkolu..." onkeydown="if(event.key==='Enter'){event.preventDefault();window.addTempSubtask();}" class="flex-1 bg-[#0B0F17] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition">
+                            <button type="button" onclick="window.addTempSubtask()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center space-x-1.5 flex-shrink-0">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Přidat podúkol</span>
+                            </button>
+                        </div>
+                        <!-- Container for temporary subtasks -->
+                        <div id="tempSubtasksList" class="space-y-1.5 pt-1">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="flex items-center justify-center space-x-2.5 px-10 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30">
+                            <i data-lucide="scroll" class="w-4 h-4"></i>
+                            <span>Přidat úkol</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TAB 2: NOVÁ KATEGORIE (Two Column: Creation Left, Overview Right) -->
+            <div id="tabCategoryContent" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <!-- Left: Form -->
+                    <form onsubmit="window.createNewCategory(event)" class="space-y-4 bg-[#0B0F17] border border-slate-800 rounded-xl p-4">
+                        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Vytvořit novou kategorii</h4>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Název kategorie</label>
+                            <input type="text" id="newCatName" required placeholder="např. Škola, Práce, Osobní..." oninput="window.clearInputError('newCatName')" class="w-full bg-[#151C2C] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <button type="submit" class="w-full flex items-center justify-center space-x-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30">
+                            <i data-lucide="tag" class="w-4 h-4"></i>
+                            <span>Přidat kategorii</span>
+                        </button>
+                    </form>
+
+                    <!-- Right: Overview Grid -->
+                    <div class="space-y-3 bg-[#0B0F17] border border-slate-800 rounded-xl p-4">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Nynější kategorie</h4>
+                        <div id="categoriesOverviewList" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-52 overflow-y-auto pr-1">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: NOVÁ BARVA (Two Column: Creation Left, Overview Right) -->
+            <div id="tabColorContent" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <!-- Left: Form -->
+                    <form onsubmit="window.createNewColor(event)" class="space-y-4 bg-[#0B0F17] border border-slate-800 rounded-xl p-4">
+                        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Vytvořit novou barvu</h4>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Název barvy</label>
+                            <input type="text" id="newColorName" required placeholder="např. Modrá, Fialová, Zelená..." oninput="window.clearInputError('newColorName')" class="w-full bg-[#151C2C] border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Hex kód / Odstín</label>
+                            <div id="newColorHexWrapper" class="flex items-center space-x-3 bg-[#151C2C] border border-slate-800 rounded-xl p-2 transition">
+                                <input type="color" id="newColorPicker" value="#06B6D4" class="w-10 h-10 bg-transparent cursor-pointer rounded-xl overflow-hidden border-0">
+                                <input type="text" id="newColorHexText" value="#06B6D4" readonly class="bg-transparent text-xs font-mono text-slate-200 focus:outline-none">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full flex items-center justify-center space-x-2 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30">
+                            <i data-lucide="palette" class="w-4 h-4"></i>
+                            <span>Přidat barvu</span>
+                        </button>
+                    </form>
+
+                    <!-- Right: Overview Grid -->
+                    <div class="space-y-3 bg-[#0B0F17] border border-slate-800 rounded-xl p-4">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Nynější barvy palety</h4>
+                        <div id="colorsOverviewList" class="grid grid-cols-2 gap-2.5 max-h-52 overflow-y-auto pr-1">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FILTERS & SEARCH BAR (Expanded Search Box Left) -->
+        <section class="flex flex-wrap items-center justify-between gap-4 bg-[#151C2C] border border-slate-800/80 rounded-2xl p-4 shadow-2xl">
+            <!-- Search Input on the Left -->
+            <div class="flex items-center space-x-3 flex-1 min-w-[240px]">
+                <div class="relative w-full max-w-md">
+                    <input type="text" id="searchInput" oninput="window.renderTasks()" placeholder="Hledat úkol..." class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3 top-3"></i>
+                </div>
+            </div>
+
+            <!-- Filter Dropdowns on the Right -->
+            <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+                <span class="text-xs font-bold text-slate-400">Filtr:</span>
+                
+                <!-- Filter Category -->
+                <div class="relative w-36 custom-select-wrapper" data-select-id="filterCategorySelect">
+                    <input type="hidden" id="filterCategorySelect" value="Vše">
+                    <button type="button" onclick="window.toggleCustomSelect('filterCategorySelect')" class="w-full bg-[#0B0F17] border border-slate-800 hover:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 text-xs text-white text-left focus:outline-none focus:border-indigo-500 transition cursor-pointer flex items-center relative">
+                        <span id="filterCategorySelectLabel" class="truncate">Vše</span>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 pointer-events-none transition-transform duration-200" id="filterCategorySelectChevron"></i>
+                    </button>
+                    <div id="filterCategorySelectMenu" class="custom-select-menu hidden absolute left-0 right-0 mt-1.5 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl p-1 max-h-48 overflow-y-auto z-40 space-y-0.5">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Filter Urgency -->
+                <div class="relative w-28 custom-select-wrapper" data-select-id="filterUrgencySelect">
+                    <input type="hidden" id="filterUrgencySelect" value="Vše">
+                    <button type="button" onclick="window.toggleCustomSelect('filterUrgencySelect')" class="w-full bg-[#0B0F17] border border-slate-800 hover:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 text-xs text-white text-left focus:outline-none focus:border-indigo-500 transition cursor-pointer flex items-center relative">
+                        <span id="filterUrgencySelectLabel" class="truncate">Vše</span>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-indigo-400 absolute right-2.5 pointer-events-none transition-transform duration-200" id="filterUrgencySelectChevron"></i>
+                    </button>
+                    <div id="filterUrgencySelectMenu" class="custom-select-menu hidden absolute left-0 right-0 mt-1.5 bg-[#0F172A] border border-slate-700/80 rounded-xl shadow-2xl p-1 max-h-48 overflow-y-auto z-40 space-y-0.5">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TASKS CONTAINER -->
+        <main id="tasksContainer" class="space-y-6">
+            <!-- Dynamic Groups -->
+        </main>
+
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- MODAL: EDIT TITLE -->
+    <div id="editTitleModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden p-4">
+        <div class="max-w-xl w-[95%] sm:w-full bg-[#151C2C] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="edit-3" class="w-4 h-4 text-indigo-400"></i>
+                <span>Upravit název</span>
+            </h3>
+            <input type="text" id="editTitleInput" onkeydown="if(event.key==='Enter'){event.preventDefault();window.saveTitleEdit();}" class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="window.closeEditTitleModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 rounded-xl transition">Zrušit</button>
+                <button type="button" onclick="window.saveTitleEdit()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white rounded-xl transition shadow-lg shadow-indigo-600/30">Uložit změny</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CHANGE TASK COLOR -->
+    <div id="changeColorModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden p-4">
+        <div class="max-w-sm w-full bg-[#151C2C] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="palette" class="w-4 h-4 text-indigo-400"></i>
+                <span>Změnit barvu úkolu</span>
+            </h3>
+            <div id="colorModalSwatches" class="flex flex-wrap gap-3 justify-center p-2"></div>
+            <div class="flex justify-end">
+                <button type="button" onclick="window.closeColorModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 rounded-xl transition">Zavřít</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CUSTOM DELETE CONFIRMATION -->
+    <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden p-4">
+        <div class="max-w-md w-full bg-[#151C2C] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex items-center space-x-3 text-amber-400">
+                <i data-lucide="alert-triangle" class="w-6 h-6 flex-shrink-0"></i>
+                <h3 class="text-base font-bold text-white">Potvrzení akce</h3>
+            </div>
+            <p id="confirmModalText" class="text-xs text-slate-300 leading-relaxed"></p>
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" id="confirmModalCancelBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 rounded-xl transition">Zrušit</button>
+                <button type="button" id="confirmModalOkBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white rounded-xl transition shadow-lg shadow-rose-600/30">Potvrdit smazání</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: LOCAL AUTHENTICATION (LOGIN & REGISTRATION) -->
+    <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0B0F17]/45 backdrop-blur-[2px] p-4">
+        <div class="auth-card-anim max-w-md w-full bg-[#151C2C]/95 border border-slate-800/90 rounded-2xl p-6 sm:p-7 shadow-2xl space-y-5">
+            <!-- Brand Header -->
+            <div class="flex flex-col items-center text-center space-y-2">
+                <div class="p-3 bg-gradient-to-br from-indigo-500/20 to-violet-500/10 text-indigo-400 rounded-2xl border border-indigo-500/30 shadow-lg shadow-indigo-500/10">
+                    <i data-lucide="swords" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-extrabold tracking-tight text-white">QuestLog</h2>
+                    <p id="authSubtitle" class="text-xs text-slate-400 mt-0.5">Přihlas se pro přístup ke svým úkolům</p>
+                </div>
+            </div>
+
+            <!-- Mode Switcher (Login / Register) -->
+            <div class="grid grid-cols-2 gap-1.5 bg-[#0B0F17] p-1 rounded-xl border border-slate-800/80">
+                <button type="button" id="authTabLoginBtn" onclick="window.switchAuthMode('login')"
+                    class="py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition">
+                    Přihlášení
+                </button>
+                <button type="button" id="authTabRegisterBtn" onclick="window.switchAuthMode('register')"
+                    class="py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition">
+                    Registrace
+                </button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="loginForm" onsubmit="window.handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Přihlašovací jméno</label>
+                    <div class="relative">
+                        <input type="text" id="loginUsername" autocomplete="username" placeholder="Zadej login..."
+                            oninput="window.clearAuthFeedback()"
+                            class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Heslo</label>
+                    <div class="relative">
+                        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Zadej heslo..."
+                            oninput="window.clearAuthFeedback()"
+                            class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+                        <button type="button" onclick="window.togglePasswordVisibility('loginPassword', this)" title="Zobrazit / skrýt heslo"
+                            class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="loginErrorMsg" class="hidden flex items-center space-x-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
+                    <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+                    <span>Nesprávné přihlašovací jméno nebo heslo.</span>
+                </div>
+
+                <button type="submit"
+                    class="w-full flex items-center justify-center space-x-2 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span>Přihlásit se</span>
+                </button>
+
+                <p class="text-center text-[11px] text-slate-500 pt-0.5">
+                    Testovací účet: <span class="text-slate-300 font-semibold">Test</span> / <span class="text-slate-300 font-semibold">test</span>
+                </p>
+            </form>
+
+            <!-- REGISTER FORM (VISUAL PREVIEW WITH SPECIAL CODE) -->
+            <form id="registerForm" onsubmit="window.handleRegister(event)" class="hidden space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Přihlašovací jméno</label>
+                    <div class="relative">
+                        <input type="text" id="regUsername" autocomplete="off" placeholder="Zvol si přihlašovací jméno..."
+                            oninput="window.clearAuthFeedback()"
+                            class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Heslo</label>
+                    <div class="relative">
+                        <input type="password" id="regPassword" autocomplete="new-password" placeholder="Zvol si heslo..."
+                            oninput="window.clearAuthFeedback()"
+                            class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+                        <button type="button" onclick="window.togglePasswordVisibility('regPassword', this)" title="Zobrazit / skrýt heslo"
+                            class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Speciální kód</label>
+                    <div class="relative">
+                        <input type="text" id="regInviteCode" autocomplete="off" placeholder="Zadej speciální zvací kód..."
+                            oninput="window.clearAuthFeedback()"
+                            class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                        <i data-lucide="key-round" class="w-4 h-4 text-indigo-400/80 absolute left-3 top-2.5"></i>
+                    </div>
+                </div>
+
+                <div id="registerStatusMsg" class="hidden flex items-start space-x-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-medium leading-relaxed">
+                    <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+                    <span id="registerStatusText"></span>
+                </div>
+
+                <button type="submit"
+                    class="w-full flex items-center justify-center space-x-2 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-indigo-600/30">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>Vytvořit účet</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APPLICATION LOGIC SCRIPT -->
+    <script>
+        // -------------------------------------------------------------
+        // GLOBAL STATE & LOCAL USERS
+        // -------------------------------------------------------------
+        const localUsers = [
+            { username: "Test", password: "test" }
+        ];
+        let currentUser = null;
+
+        let userXp = 140;
+        let displayedUserXp = 140;
+        let xpAnimationFrameId = null;
+        let xpBadgeAnimTimeout = null;
+        let dailyStreak = 0;
+
+        let tasks = [];
+        let categories = ["Práce", "Škola", "Projekt", "Zdraví"];
+        let colorPalette = [
+            { name: "Bílá", hex: "#FFFFFF" },
+            { name: "Indigová", hex: "#6366F1" },
+            { name: "Smaragdová", hex: "#10B981" },
+            { name: "Červená", hex: "#EF4444" },
+            { name: "Tyrkysová", hex: "#06B6D4" },
+            { name: "Jantarová", hex: "#F59E0B" }
+        ];
+
+        let selectedTaskColor = "#6366F1";
+        let tempSubtasks = [];
+        let editingTempSubtaskIndex = null;
+
+        let currentEditTarget = null;
+        let currentTargetTaskForColor = null;
+
+        const COMPLETED_TASK_TTL_MS = 24 * 60 * 60 * 1000; // 1 day (24 hours)
+
+        // -------------------------------------------------------------
+        // SAFE ESCAPING & INPUT FEEDBACK HELPERS
+        // -------------------------------------------------------------
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function escapeJsString(str) {
+            return String(str)
+                .replace(/\\/g, "\\\\")
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"');
+        }
+
+        window.clearInputError = function(elOrId) {
+            const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+            if (!el) return;
+            clearTimeout(el._errorTimeout);
+            el.classList.remove('!border-rose-500', 'ring-2', 'ring-rose-500/30', 'animate-red-shake');
+        };
+
+        function triggerInputError(elOrId) {
+            const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+            if (!el) return;
+
+            el.classList.remove('animate-red-shake');
+            void el.offsetWidth;
+            el.classList.add('!border-rose-500', 'ring-2', 'ring-rose-500/30', 'animate-red-shake');
+            if (typeof el.focus === 'function') {
+                el.focus();
+            }
+
+            clearTimeout(el._errorTimeout);
+            el._errorTimeout = setTimeout(() => {
+                el.classList.remove('!border-rose-500', 'ring-2', 'ring-rose-500/30', 'animate-red-shake');
+            }, 1600);
+        }
+
+        // -------------------------------------------------------------
+        // INITIALIZATION
+        // -------------------------------------------------------------
+        window.onload = function() {
+            lucide.createIcons();
+            initDateSelects();
+            initUrgencySelects();
+            renderCategoryDropdowns();
+            renderColorPaletteSelector();
+            initSampleData();
+            cleanupExpiredCompletedTasks();
+            renderCategoriesOverview();
+            renderColorsOverview();
+            updateXpDisplay(false);
+            renderTasks();
+
+            // Periodically remove completed tasks older than 1 day
+            setInterval(() => {
+                if (cleanupExpiredCompletedTasks()) {
+                    renderTasks();
+                }
+            }, 60 * 1000);
+
+            // Sync Hex Color Input & Clear Duplicate Highlight
+            const colorPicker = document.getElementById('newColorPicker');
+            const colorHexText = document.getElementById('newColorHexText');
+            if (colorPicker && colorHexText) {
+                colorPicker.addEventListener('input', (e) => {
+                    colorHexText.value = e.target.value.toUpperCase();
+                    window.clearInputError('newColorHexWrapper');
+                });
+            }
+
+            // Close custom dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.custom-select-wrapper')) {
+                    closeAllCustomSelects();
+                }
+            });
+
+            // Close modals on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeAllCustomSelects();
+                    window.closeEditTitleModal();
+                    window.closeColorModal();
+                    const confirmModal = document.getElementById('confirmModal');
+                    if (confirmModal && !confirmModal.classList.contains('hidden')) {
+                        confirmModal.classList.add('hidden');
+                    }
+                }
+            });
+        };
+
+        // -------------------------------------------------------------
+        // LOCAL AUTHENTICATION LOGIC
+        // -------------------------------------------------------------
+        window.switchAuthMode = function(mode) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginBtn = document.getElementById('authTabLoginBtn');
+            const registerBtn = document.getElementById('authTabRegisterBtn');
+            const subtitle = document.getElementById('authSubtitle');
+
+            window.clearAuthFeedback();
+
+            if (mode === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginBtn.className = 'py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition';
+                registerBtn.className = 'py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition';
+                subtitle.textContent = 'Přihlas se pro přístup ke svým úkolům';
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                registerBtn.className = 'py-2 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition';
+                loginBtn.className = 'py-2 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition';
+                subtitle.textContent = 'Vytvoření nového účtu vyžaduje speciální kód';
+            }
+            lucide.createIcons();
+        };
+
+        window.clearAuthFeedback = function() {
+            const loginErr = document.getElementById('loginErrorMsg');
+            const regStatus = document.getElementById('registerStatusMsg');
+            if (loginErr) loginErr.classList.add('hidden');
+            if (regStatus) regStatus.classList.add('hidden');
+            ['loginUsername', 'loginPassword', 'regUsername', 'regPassword', 'regInviteCode'].forEach(id => {
+                window.clearInputError(id);
+            });
+        };
+
+        window.togglePasswordVisibility = function(inputId, btnEl) {
+            const input = document.getElementById(inputId);
+            if (!input || !btnEl) return;
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btnEl.innerHTML = `<i data-lucide="${isHidden ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+            lucide.createIcons();
+        };
+
+        window.handleLogin = function(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('loginUsername');
+            const passwordInput = document.getElementById('loginPassword');
+            const loginErrorMsg = document.getElementById('loginErrorMsg');
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            const matchedUser = localUsers.find(u => u.username === username && u.password === password);
+            if (!matchedUser) {
+                loginErrorMsg.classList.remove('hidden');
+                triggerInputError(usernameInput);
+                triggerInputError(passwordInput);
+                lucide.createIcons();
+                return;
+            }
+
+            currentUser = matchedUser;
+            document.getElementById('currentUsernameDisplay').textContent = matchedUser.username;
+            document.getElementById('mainContent').classList.remove('app-locked');
+            document.getElementById('authModal').classList.add('hidden');
+
+            loginErrorMsg.classList.add('hidden');
+            passwordInput.value = '';
+            showToast(`Vítej zpět, ${matchedUser.username}!`, 'success', 'user');
+        };
+
+        window.handleRegister = function(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('regUsername');
+            const passwordInput = document.getElementById('regPassword');
+            const codeInput = document.getElementById('regInviteCode');
+            const statusBox = document.getElementById('registerStatusMsg');
+            const statusText = document.getElementById('registerStatusText');
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            const inviteCode = codeInput.value.trim();
+
+            if (!username) {
+                triggerInputError(usernameInput);
+                return;
+            }
+            if (!password) {
+                triggerInputError(passwordInput);
+                return;
+            }
+            if (!inviteCode) {
+                triggerInputError(codeInput);
+                statusText.textContent = 'Pro registraci je nutné zadat speciální zvací kód.';
+                statusBox.classList.remove('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            statusText.textContent = 'Registrace se speciálním kódem bude aktivní po napojení na cloudové úložiště. Zatím se přihlas pomocí účtu Test.';
+            statusBox.classList.remove('hidden');
+            triggerInputError(codeInput);
+            lucide.createIcons();
+        };
+
+        window.logoutUser = function() {
+            currentUser = null;
+            document.getElementById('mainContent').classList.add('app-locked');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            window.switchAuthMode('login');
+            document.getElementById('authModal').classList.remove('hidden');
+            showToast('Byl jsi odhlášen.', 'info', 'user');
+        };
+
+        // -------------------------------------------------------------
+        // CUSTOM DROPDOWN SELECT ENGINE
+        // -------------------------------------------------------------
+        function closeAllCustomSelects(exceptId = null) {
+            document.querySelectorAll('.custom-select-menu').forEach(menu => {
+                const wrapper = menu.closest('.custom-select-wrapper');
+                const id = wrapper ? wrapper.dataset.selectId : null;
+                if (id !== exceptId) {
+                    menu.classList.add('hidden');
+                    const chevron = document.getElementById(`${id}Chevron`);
+                    if (chevron) chevron.classList.remove('rotate-180');
+                }
+            });
+        }
+
+        window.toggleCustomSelect = function(selectId) {
+            const menu = document.getElementById(`${selectId}Menu`);
+            const chevron = document.getElementById(`${selectId}Chevron`);
+            if (!menu) return;
+
+            const isHidden = menu.classList.contains('hidden');
+            closeAllCustomSelects(selectId);
+
+            if (isHidden) {
+                menu.classList.remove('hidden');
+                if (chevron) chevron.classList.add('rotate-180');
+            } else {
+                menu.classList.add('hidden');
+                if (chevron) chevron.classList.remove('rotate-180');
+            }
+        };
+
+        function setCustomSelectOptions(selectId, options, selectedValue, onChangeCallback = null) {
+            const hiddenInput = document.getElementById(selectId);
+            const labelEl = document.getElementById(`${selectId}Label`);
+            const menuEl = document.getElementById(`${selectId}Menu`);
+            if (!hiddenInput || !labelEl || !menuEl) return;
+
+            const strVal = String(selectedValue);
+            hiddenInput.value = strVal;
+
+            const currentObj = options.find(o => String(o.value) === strVal) || options[0];
+            if (currentObj) {
+                hiddenInput.value = String(currentObj.value);
+                labelEl.textContent = currentObj.label;
+            }
+
+            menuEl.innerHTML = '';
+            options.forEach(opt => {
+                const isSelected = String(opt.value) === String(hiddenInput.value);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition flex items-center justify-between ${
+                    isSelected
+                        ? 'bg-indigo-600 text-white font-semibold'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                }`;
+                btn.innerHTML = `<span class="truncate">${escapeHtml(opt.label)}</span>${isSelected ? '<i data-lucide="check" class="w-3 h-3 flex-shrink-0 ml-1.5"></i>' : ''}`;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    hiddenInput.value = String(opt.value);
+                    labelEl.textContent = opt.label;
+                    setCustomSelectOptions(selectId, options, opt.value, onChangeCallback);
+                    closeAllCustomSelects();
+                    if (typeof onChangeCallback === 'function') {
+                        onChangeCallback(opt.value);
+                    }
+                };
+                menuEl.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        function initDateSelects() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1;
+            const currentDay = today.getDate();
+
+            const monthNames = [
+                'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
+                'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
+            ];
+
+            const yearOptions = [];
+            for (let y = currentYear - 1; y <= currentYear + 5; y++) {
+                yearOptions.push({ value: y, label: String(y) });
+            }
+
+            const monthOptions = monthNames.map((name, idx) => ({
+                value: idx + 1,
+                label: name
+            }));
+
+            const updateDaysForMonthYear = (desiredDay) => {
+                const m = parseInt(document.getElementById('taskMonthSelect').value, 10) || currentMonth;
+                const y = parseInt(document.getElementById('taskYearSelect').value, 10) || currentYear;
+                const maxDays = new Date(y, m, 0).getDate();
+                const safeDay = Math.min(desiredDay, maxDays);
+
+                const dayOptions = [];
+                for (let d = 1; d <= maxDays; d++) {
+                    dayOptions.push({ value: d, label: `${d}.` });
+                }
+                setCustomSelectOptions('taskDaySelect', dayOptions, safeDay);
+            };
+
+            setCustomSelectOptions('taskYearSelect', yearOptions, currentYear, () => {
+                const prevDay = parseInt(document.getElementById('taskDaySelect').value, 10) || currentDay;
+                updateDaysForMonthYear(prevDay);
+            });
+
+            setCustomSelectOptions('taskMonthSelect', monthOptions, currentMonth, () => {
+                const prevDay = parseInt(document.getElementById('taskDaySelect').value, 10) || currentDay;
+                updateDaysForMonthYear(prevDay);
+            });
+
+            updateDaysForMonthYear(currentDay);
+        }
+
+        function initUrgencySelects() {
+            const taskUrgencyOptions = [
+                { value: '5', label: '★ 5 (Kritická)' },
+                { value: '4', label: '★ 4 (Vysoká)' },
+                { value: '3', label: '★ 3 (Normální)' },
+                { value: '2', label: '★ 2 (Nízká)' },
+                { value: '1', label: '★ 1 (Minimální)' }
+            ];
+            setCustomSelectOptions('taskUrgencySelect', taskUrgencyOptions, '3');
+
+            const filterUrgencyOptions = [
+                { value: 'Vše', label: 'Vše' },
+                { value: '5', label: '★ 5' },
+                { value: '4', label: '★ 4' },
+                { value: '3', label: '★ 3' },
+                { value: '2', label: '★ 2' },
+                { value: '1', label: '★ 1' }
+            ];
+            setCustomSelectOptions('filterUrgencySelect', filterUrgencyOptions, 'Vše', () => {
+                window.renderTasks();
+            });
+        }
+
+        // -------------------------------------------------------------
+        // SAMPLE INITIAL DATA
+        // -------------------------------------------------------------
+        function formatIsoDate(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function initSampleData() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const inTwoDays = new Date(today);
+            inTwoDays.setDate(today.getDate() + 2);
+
+            const todayStr = formatIsoDate(today);
+            const tomorrowStr = formatIsoDate(tomorrow);
+            const twoDaysStr = formatIsoDate(inTwoDays);
+
+            tasks = [
+                {
+                    id: 'sample-1',
+                    title: 'Dokončit návrh uživatelského rozhraní QuestLog',
+                    category: 'Projekt',
+                    urgency: 5,
+                    dueDate: todayStr,
+                    color: '#6366F1',
+                    completed: false,
+                    completedAt: null,
+                    earnedXp: 0,
+                    countedInStreak: false,
+                    subtasks: [
+                        { id: 'st-1', title: 'Sjednotit tmavou paletu a zaoblení karet', completed: true },
+                        { id: 'st-2', title: 'Otestovat plynulé animace podúkolů', completed: true },
+                        { id: 'st-3', title: 'Připravit napojení na cloudové úložiště', completed: false }
+                    ]
+                },
+                {
+                    id: 'sample-2',
+                    title: 'Příprava na zkoušku z databázových systémů',
+                    category: 'Škola',
+                    urgency: 4,
+                    dueDate: tomorrowStr,
+                    color: '#F59E0B',
+                    completed: false,
+                    completedAt: null,
+                    earnedXp: 0,
+                    countedInStreak: false,
+                    subtasks: [
+                        { id: 'st-4', title: 'Projít SQL dotazy a indexování', completed: false },
+                        { id: 'st-5', title: 'Procvičit normální formy a transakce', completed: false }
+                    ]
+                },
+                {
+                    id: 'sample-3',
+                    title: 'Nákup potravin a vitamínů na celý týden',
+                    category: 'Zdraví',
+                    urgency: 2,
+                    dueDate: todayStr,
+                    color: '#10B981',
+                    completed: true,
+                    completedAt: Date.now(),
+                    earnedXp: 40,
+                    countedInStreak: true,
+                    subtasks: []
+                },
+                {
+                    id: 'sample-4',
+                    title: 'Týdenní synchronizace úkolů a priorit',
+                    category: 'Práce',
+                    urgency: 3,
+                    dueDate: twoDaysStr,
+                    color: '#06B6D4',
+                    completed: false,
+                    completedAt: null,
+                    earnedXp: 0,
+                    countedInStreak: false,
+                    subtasks: []
+                }
+            ];
+            dailyStreak = 1;
+        }
+
+        // -------------------------------------------------------------
+        // AUTO-CLEANUP OF COMPLETED TASKS AFTER 1 DAY
+        // -------------------------------------------------------------
+        function cleanupExpiredCompletedTasks() {
+            const now = Date.now();
+            const initialCount = tasks.length;
+
+            tasks = tasks.filter(task => {
+                if (!task.completed) return true;
+                if (typeof task.completedAt === 'number') {
+                    return (now - task.completedAt) < COMPLETED_TASK_TTL_MS;
+                }
+                return getDaysDifferenceFromToday(task.dueDate) > -1;
+            });
+
+            return tasks.length !== initialCount;
+        }
+
+        // -------------------------------------------------------------
+        // TABS SWITCHING
+        // -------------------------------------------------------------
+        window.switchCreationTab = function(tabName) {
+            const tabs = {
+                quest: { btn: 'tabQuestBtn', content: 'tabQuestContent' },
+                category: { btn: 'tabCategoryBtn', content: 'tabCategoryContent' },
+                color: { btn: 'tabColorBtn', content: 'tabColorContent' }
+            };
+
+            Object.keys(tabs).forEach(key => {
+                const btn = document.getElementById(tabs[key].btn);
+                const content = document.getElementById(tabs[key].content);
+                if (!btn || !content) return;
+
+                if (key === tabName) {
+                    btn.className = 'flex items-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition';
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = 'flex items-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition';
+                    content.classList.add('hidden');
+                }
+            });
+            lucide.createIcons();
+        };
+
+        // -------------------------------------------------------------
+        // CATEGORIES MANAGEMENT
+        // -------------------------------------------------------------
+        function renderCategoryDropdowns() {
+            const currentTaskCat = document.getElementById('taskCategorySelect').value || 'Default';
+            const taskCatOptions = [
+                { value: 'Default', label: 'Default' },
+                ...categories.map(c => ({ value: c, label: c }))
+            ];
+            setCustomSelectOptions(
+                'taskCategorySelect',
+                taskCatOptions,
+                taskCatOptions.some(o => o.value === currentTaskCat) ? currentTaskCat : 'Default'
+            );
+
+            const currentFilterCat = document.getElementById('filterCategorySelect').value || 'Vše';
+            const filterCatOptions = [
+                { value: 'Vše', label: 'Vše' },
+                { value: 'Default', label: 'Default' },
+                ...categories.map(c => ({ value: c, label: c }))
+            ];
+            setCustomSelectOptions(
+                'filterCategorySelect',
+                filterCatOptions,
+                filterCatOptions.some(o => o.value === currentFilterCat) ? currentFilterCat : 'Vše',
+                () => window.renderTasks()
+            );
+        }
+
+        function renderCategoriesOverview(newlyAddedName = null) {
+            const container = document.getElementById('categoriesOverviewList');
+            if (!container) return;
+
+            const allItems = ['Default', ...categories];
+            container.innerHTML = allItems.map(cat => {
+                const isDefault = cat === 'Default';
+                const isNew = newlyAddedName && cat.toLowerCase() === newlyAddedName.toLowerCase();
+                return `
+                    <div data-cat-item="${escapeHtml(cat)}" class="${isNew ? 'item-enter-anim' : ''} flex items-center justify-between bg-[#151C2C] border border-slate-800/90 rounded-xl px-3 py-2 text-xs">
+                        <span class="font-semibold text-slate-200 truncate pr-2">${escapeHtml(cat)}</span>
+                        ${isDefault
+                            ? `<span title="Výchozí kategorii nelze smazat" class="text-slate-500 flex-shrink-0"><i data-lucide="lock" class="w-3.5 h-3.5"></i></span>`
+                            : `<button type="button" onclick="window.requestDeleteCategory('${escapeJsString(cat)}')" title="Smazat kategorii" class="text-slate-500 hover:text-rose-400 transition flex-shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>`
+                        }
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+
+            if (newlyAddedName) {
+                setTimeout(() => {
+                    const el = container.querySelector(`[data-cat-item="${CSS.escape(newlyAddedName)}"]`);
+                    if (el) el.classList.remove('item-enter-anim');
+                }, 420);
+            }
+        }
+
+        window.createNewCategory = function(e) {
+            e.preventDefault();
+            const input = document.getElementById('newCatName');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const isDuplicate = name.toLowerCase() === 'default' ||
+                categories.some(c => c.toLowerCase() === name.toLowerCase());
+
+            if (isDuplicate) {
+                triggerInputError(input);
+                showToast(`Kategorie "${name}" už existuje.`, 'warning', 'tag');
+                return;
+            }
+
+            categories.push(name);
+            input.value = '';
+            renderCategoryDropdowns();
+            renderCategoriesOverview(name);
+            showToast(`Kategorie "${name}" byla přidána.`, 'success', 'tag');
+        };
+
+        window.requestDeleteCategory = function(catName) {
+            openConfirmModal(`Opravdu chceš smazat kategorii "${catName}"? Úkoly v této kategorii se přesunou do Default.`, () => {
+                const itemEl = document.querySelector(`[data-cat-item="${CSS.escape(catName)}"]`);
+                const finalizeDelete = () => {
+                    categories = categories.filter(c => c !== catName);
+                    tasks.forEach(t => {
+                        if (t.category === catName) t.category = 'Default';
+                    });
+                    renderCategoryDropdowns();
+                    renderCategoriesOverview();
+                    renderTasks();
+                    showToast(`Kategorie "${catName}" byla smazána.`, 'info', 'tag');
+                };
+
+                if (itemEl) {
+                    itemEl.classList.remove('item-enter-anim');
+                    void itemEl.offsetWidth;
+                    itemEl.classList.add('item-exit-anim');
+                    setTimeout(finalizeDelete, 260);
+                } else {
+                    finalizeDelete();
+                }
+            });
+        };
+
+        // -------------------------------------------------------------
+        // COLOR PALETTE MANAGEMENT
+        // -------------------------------------------------------------
+        function renderColorPaletteSelector() {
+            const container = document.getElementById('colorPaletteSelect');
+            if (!container) return;
+
+            if (!colorPalette.some(c => c.hex.toUpperCase() === selectedTaskColor.toUpperCase())) {
+                selectedTaskColor = colorPalette[0]?.hex || '#FFFFFF';
+            }
+
+            container.innerHTML = colorPalette.map(c => {
+                const isSelected = c.hex.toUpperCase() === selectedTaskColor.toUpperCase();
+                return `
+                    <button type="button" onclick="window.selectTaskColor('${escapeJsString(c.hex)}')" title="${escapeHtml(c.name)}"
+                        class="w-7 h-7 rounded-full transition-transform transform hover:scale-110 flex items-center justify-center ${
+                            isSelected ? 'ring-2 ring-offset-2 ring-offset-[#151C2C] ring-indigo-400 scale-110' : 'opacity-85 hover:opacity-100'
+                        }"
+                        style="background-color: ${escapeHtml(c.hex)};">
+                        ${isSelected ? `<i data-lucide="check" class="w-3.5 h-3.5 ${c.hex.toUpperCase() === '#FFFFFF' ? 'text-slate-900' : 'text-white'}"></i>` : ''}
+                    </button>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        window.selectTaskColor = function(hex) {
+            selectedTaskColor = hex;
+            renderColorPaletteSelector();
+        };
+
+        function renderColorsOverview(newlyAddedHex = null) {
+            const container = document.getElementById('colorsOverviewList');
+            if (!container) return;
+
+            container.innerHTML = colorPalette.map(c => {
+                const isDefaultWhite = c.hex.toUpperCase() === '#FFFFFF' && c.name.toLowerCase() === 'bílá';
+                const isNew = newlyAddedHex && c.hex.toUpperCase() === newlyAddedHex.toUpperCase();
+                return `
+                    <div data-color-hex="${escapeHtml(c.hex)}" class="${isNew ? 'item-enter-anim' : ''} flex items-center justify-between bg-[#151C2C] border border-slate-800/90 rounded-xl px-3 py-2 text-xs">
+                        <div class="flex items-center space-x-2 min-w-0 pr-2">
+                            <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 border border-slate-700" style="background-color: ${escapeHtml(c.hex)};"></span>
+                            <span class="font-semibold text-slate-200 truncate">${escapeHtml(c.name)}</span>
+                        </div>
+                        ${isDefaultWhite
+                            ? `<span title="Výchozí barvu nelze smazat" class="text-slate-500 flex-shrink-0"><i data-lucide="lock" class="w-3.5 h-3.5"></i></span>`
+                            : `<button type="button" onclick="window.requestDeleteColor('${escapeJsString(c.hex)}', '${escapeJsString(c.name)}')" title="Smazat barvu" class="text-slate-500 hover:text-rose-400 transition flex-shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>`
+                        }
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+
+            if (newlyAddedHex) {
+                setTimeout(() => {
+                    const el = container.querySelector(`[data-color-hex="${CSS.escape(newlyAddedHex)}"]`);
+                    if (el) el.classList.remove('item-enter-anim');
+                }, 420);
+            }
+        }
+
+        window.createNewColor = function(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('newColorName');
+            const picker = document.getElementById('newColorPicker');
+            const name = nameInput.value.trim();
+            const hex = picker.value.toUpperCase();
+
+            if (!name) return;
+
+            const duplicateName = colorPalette.some(c => c.name.toLowerCase() === name.toLowerCase());
+            if (duplicateName) {
+                triggerInputError(nameInput);
+                showToast(`Barva s názvem "${name}" už existuje.`, 'warning', 'palette');
+                return;
+            }
+
+            const duplicateHex = colorPalette.some(c => c.hex.toUpperCase() === hex);
+            if (duplicateHex) {
+                triggerInputError('newColorHexWrapper');
+                showToast('Tento barevný odstín už v paletě existuje.', 'warning', 'palette');
+                return;
+            }
+
+            colorPalette.push({ name, hex });
+            nameInput.value = '';
+            renderColorPaletteSelector();
+            renderColorsOverview(hex);
+            showToast(`Barva "${name}" byla přidána.`, 'success', 'palette');
+        };
+
+        window.requestDeleteColor = function(hex, colorName) {
+            openConfirmModal(`Opravdu chceš smazat barvu "${colorName}"?`, () => {
+                const itemEl = document.querySelector(`[data-color-hex="${CSS.escape(hex)}"]`);
+                const finalizeDelete = () => {
+                    colorPalette = colorPalette.filter(c => c.hex.toUpperCase() !== hex.toUpperCase());
+                    if (selectedTaskColor.toUpperCase() === hex.toUpperCase()) {
+                        selectedTaskColor = colorPalette[0]?.hex || '#FFFFFF';
+                    }
+                    tasks.forEach(t => {
+                        if (t.color.toUpperCase() === hex.toUpperCase()) {
+                            t.color = '#FFFFFF';
+                        }
+                    });
+                    renderColorPaletteSelector();
+                    renderColorsOverview();
+                    renderTasks();
+                    showToast(`Barva "${colorName}" byla smazána.`, 'info', 'palette');
+                };
+
+                if (itemEl) {
+                    itemEl.classList.remove('item-enter-anim');
+                    void itemEl.offsetWidth;
+                    itemEl.classList.add('item-exit-anim');
+                    setTimeout(finalizeDelete, 260);
+                } else {
+                    finalizeDelete();
+                }
+            });
+        };
+
+        // -------------------------------------------------------------
+        // TEMPORARY SUBTASKS IN CREATION FORM
+        // -------------------------------------------------------------
+        window.addTempSubtask = function() {
+            const input = document.getElementById('subtaskInput');
+            const title = input.value.trim();
+            if (!title) return;
+
+            tempSubtasks.push(title);
+            input.value = '';
+            renderTempSubtasks();
+        };
+
+        window.removeTempSubtask = function(index) {
+            tempSubtasks.splice(index, 1);
+            if (editingTempSubtaskIndex === index) {
+                editingTempSubtaskIndex = null;
+            }
+            renderTempSubtasks();
+        };
+
+        window.startEditTempSubtask = function(index) {
+            editingTempSubtaskIndex = index;
+            renderTempSubtasks();
+        };
+
+        window.saveTempSubtaskEdit = function(index) {
+            const input = document.getElementById(`tempSubEditInput_${index}`);
+            if (input) {
+                const val = input.value.trim();
+                if (val) tempSubtasks[index] = val;
+            }
+            editingTempSubtaskIndex = null;
+            renderTempSubtasks();
+        };
+
+        function renderTempSubtasks() {
+            const container = document.getElementById('tempSubtasksList');
+            if (!container) return;
+
+            if (tempSubtasks.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = tempSubtasks.map((st, idx) => {
+                if (editingTempSubtaskIndex === idx) {
+                    return `
+                        <div class="flex items-center space-x-2 bg-[#0B0F17] border border-indigo-500/60 rounded-xl px-3 py-1.5 text-xs">
+                            <input type="text" id="tempSubEditInput_${idx}" value="${escapeHtml(st)}" onkeydown="if(event.key==='Enter'){event.preventDefault();window.saveTempSubtaskEdit(${idx});}" class="flex-1 bg-transparent text-white focus:outline-none">
+                            <button type="button" onclick="window.saveTempSubtaskEdit(${idx})" class="text-emerald-400 hover:text-emerald-300 font-semibold">Uložit</button>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="flex items-center justify-between bg-[#0B0F17] border border-slate-800/90 rounded-xl px-3.5 py-2 text-xs">
+                        <span class="text-slate-300 truncate pr-2">${escapeHtml(st)}</span>
+                        <div class="flex items-center space-x-2 flex-shrink-0">
+                            <button type="button" onclick="window.startEditTempSubtask(${idx})" title="Upravit podúkol" class="text-slate-500 hover:text-indigo-400 transition">
+                                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" onclick="window.removeTempSubtask(${idx})" title="Odebrat podúkol" class="text-slate-500 hover:text-rose-400 transition">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        // -------------------------------------------------------------
+        // TASK CREATION
+        // -------------------------------------------------------------
+        window.createNewTask = function(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('taskTitle');
+            const title = titleInput.value.trim();
+            if (!title) return;
+
+            const category = document.getElementById('taskCategorySelect').value || 'Default';
+            const urgency = parseInt(document.getElementById('taskUrgencySelect').value, 10) || 3;
+            const day = String(document.getElementById('taskDaySelect').value).padStart(2, '0');
+            const month = String(document.getElementById('taskMonthSelect').value).padStart(2, '0');
+            const year = document.getElementById('taskYearSelect').value;
+            const dueDate = `${year}-${month}-${day}`;
+
+            const duplicateOnSameDay = tasks.some(t =>
+                !t.completed &&
+                t.dueDate === dueDate &&
+                t.title.toLowerCase() === title.toLowerCase()
+            );
+
+            if (duplicateOnSameDay) {
+                triggerInputError(titleInput);
+                showToast(`Úkol "${title}" už pro tento den existuje.`, 'warning', 'scroll');
+                return;
+            }
+
+            const newTaskId = 'task-' + Date.now();
+            const newTask = {
+                id: newTaskId,
+                title,
+                category,
+                urgency,
+                dueDate,
+                color: selectedTaskColor,
+                completed: false,
+                completedAt: null,
+                earnedXp: 0,
+                countedInStreak: false,
+                subtasks: tempSubtasks.map((stTitle, index) => ({
+                    id: `st-${Date.now()}-${index}`,
+                    title: stTitle,
+                    completed: false
+                }))
+            };
+
+            tasks.push(newTask);
+            titleInput.value = '';
+            tempSubtasks = [];
+            editingTempSubtaskIndex = null;
+            renderTempSubtasks();
+            renderTasks(newTaskId);
+            showToast('Úkol byl přidán.', 'success', 'scroll');
+        };
+
+        // -------------------------------------------------------------
+        // XP CALCULATION & SMOOTH COUNTER ANIMATION
+        // -------------------------------------------------------------
+        function updateXpDisplay(animate = true, isGain = true) {
+            const xpEl = document.getElementById('userXp');
+            const badgeBox = document.getElementById('xpBadgeBox');
+            if (!xpEl || !badgeBox) return;
+
+            if (xpAnimationFrameId) {
+                cancelAnimationFrame(xpAnimationFrameId);
+                xpAnimationFrameId = null;
+            }
+
+            if (!animate) {
+                displayedUserXp = userXp;
+                xpEl.textContent = String(userXp);
+                return;
+            }
+
+            // Trigger pure green or red flash
+            clearTimeout(xpBadgeAnimTimeout);
+            badgeBox.classList.remove('animate-green-glow', 'animate-red-glow-shake');
+            void badgeBox.offsetWidth;
+            badgeBox.classList.add(isGain ? 'animate-green-glow' : 'animate-red-glow-shake');
+
+            xpBadgeAnimTimeout = setTimeout(() => {
+                badgeBox.classList.remove('animate-green-glow', 'animate-red-glow-shake');
+            }, 600);
+
+            // Smooth numeric counter transition over 500ms
+            const startValue = displayedUserXp;
+            const endValue = userXp;
+            const duration = 500;
+            const startTime = performance.now();
+
+            const step = (now) => {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                displayedUserXp = Math.round(startValue + (endValue - startValue) * eased);
+                xpEl.textContent = String(displayedUserXp);
+
+                if (progress < 1) {
+                    xpAnimationFrameId = requestAnimationFrame(step);
+                } else {
+                    displayedUserXp = endValue;
+                    xpEl.textContent = String(endValue);
+                    xpAnimationFrameId = null;
+                }
+            };
+
+            xpAnimationFrameId = requestAnimationFrame(step);
+        }
+
+        function calculateTaskXpReward(task) {
+            const baseXp = 15 + task.urgency * 5;
+            const subtaskBonus = Array.isArray(task.subtasks) ? task.subtasks.length * 5 : 0;
+            const diffDays = getDaysDifferenceFromToday(task.dueDate);
+            const onTime = diffDays >= 0;
+            const streakBonus = onTime ? dailyStreak * 10 : 0;
+            return {
+                total: baseXp + subtaskBonus + streakBonus,
+                onTime
+            };
+        }
+
+        // -------------------------------------------------------------
+        // FLIP SMOOTH REORDERING & TASK COMPLETION
+        // -------------------------------------------------------------
+        function captureTaskCardPositions() {
+            const map = new Map();
+            document.querySelectorAll('[data-task-id]').forEach(el => {
+                map.set(el.dataset.taskId, el.getBoundingClientRect());
+            });
+            return map;
+        }
+
+        function playFlipAnimation(oldPositions) {
+            document.querySelectorAll('[data-task-id]').forEach(el => {
+                const oldRect = oldPositions.get(el.dataset.taskId);
+                if (!oldRect) return;
+                const newRect = el.getBoundingClientRect();
+                const deltaY = oldRect.top - newRect.top;
+                const deltaX = oldRect.left - newRect.left;
+
+                if (Math.abs(deltaY) > 1 || Math.abs(deltaX) > 1) {
+                    el.style.transition = 'none';
+                    el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                    void el.offsetWidth;
+                    el.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
+                    el.style.transform = '';
+                    setTimeout(() => {
+                        el.style.transition = '';
+                    }, 460);
+                }
+            });
+        }
+
+        window.toggleTaskComplete = function(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const cardEl = document.querySelector(`[data-task-id="${taskId}"]`);
+
+            if (!task.completed) {
+                const finishCompletion = () => {
+                    const oldPositions = captureTaskCardPositions();
+                    task.completed = true;
+                    task.completedAt = Date.now();
+                    if (Array.isArray(task.subtasks)) {
+                        task.subtasks.forEach(st => st.completed = true);
+                    }
+
+                    const reward = calculateTaskXpReward(task);
+                    task.earnedXp = reward.total;
+                    if (reward.onTime) {
+                        dailyStreak += 1;
+                        task.countedInStreak = true;
+                    } else {
+                        task.countedInStreak = false;
+                    }
+
+                    userXp += reward.total;
+                    updateXpDisplay(true, true);
+                    renderTasks();
+                    playFlipAnimation(oldPositions);
+                };
+
+                if (cardEl) {
+                    // Fill progress bar immediately if subtasks exist
+                    const fillBar = cardEl.querySelector('.subtask-progress-fill');
+                    if (fillBar) fillBar.style.width = '100%';
+
+                    cardEl.classList.remove('task-overdue', 'task-close-deadline', 'task-close-deadline-1', 'task-close-deadline-2');
+                    void cardEl.offsetWidth;
+                    cardEl.classList.add('task-complete-flash');
+                    setTimeout(finishCompletion, 500);
+                } else {
+                    finishCompletion();
+                }
+            } else {
+                // Uncompleting task: reset subtasks to 0%, subtract earned XP & lower daily streak
+                const oldPositions = captureTaskCardPositions();
+                task.completed = false;
+                task.completedAt = null;
+                if (Array.isArray(task.subtasks)) {
+                    task.subtasks.forEach(st => st.completed = false);
+                }
+
+                const deducted = task.earnedXp || 0;
+                if (task.countedInStreak && dailyStreak > 0) {
+                    dailyStreak -= 1;
+                }
+                task.earnedXp = 0;
+                task.countedInStreak = false;
+
+                userXp = Math.max(0, userXp - deducted);
+                updateXpDisplay(true, false);
+                renderTasks();
+                playFlipAnimation(oldPositions);
+
+                const updatedCard = document.querySelector(`[data-task-id="${taskId}"]`);
+                if (updatedCard) {
+                    updatedCard.classList.add('task-uncomplete-pulse');
+                    setTimeout(() => updatedCard.classList.remove('task-uncomplete-pulse'), 680);
+                }
+            }
+        };
+
+        window.toggleSubtaskComplete = function(taskId, subtaskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || !Array.isArray(task.subtasks)) return;
+
+            // If entire task is completed, individual subtasks cannot be unchecked directly
+            if (task.completed) {
+                showToast('Nejprve odškrtni celý úkol nahoře.', 'info', 'scroll');
+                return;
+            }
+
+            const subtask = task.subtasks.find(s => s.id === subtaskId);
+            if (!subtask) return;
+
+            const totalCount = task.subtasks.length;
+            const prevCompletedCount = task.subtasks.filter(s => s.completed).length;
+            const prevPercent = totalCount > 0 ? Math.round((prevCompletedCount / totalCount) * 100) : 0;
+
+            subtask.completed = !subtask.completed;
+
+            const newCompletedCount = task.subtasks.filter(s => s.completed).length;
+            const newPercent = totalCount > 0 ? Math.round((newCompletedCount / totalCount) * 100) : 0;
+
+            // Check if all subtasks are now completed
+            if (newCompletedCount === totalCount && totalCount > 0) {
+                renderTasks(null, { [taskId]: prevPercent });
+                const cardEl = document.querySelector(`[data-task-id="${taskId}"]`);
+                if (cardEl) {
+                    cardEl.classList.remove('task-overdue', 'task-close-deadline', 'task-close-deadline-1', 'task-close-deadline-2');
+                    void cardEl.offsetWidth;
+                    cardEl.classList.add('task-complete-flash-long');
+                }
+
+                setTimeout(() => {
+                    const oldPositions = captureTaskCardPositions();
+                    task.completed = true;
+                    task.completedAt = Date.now();
+
+                    const reward = calculateTaskXpReward(task);
+                    task.earnedXp = reward.total;
+                    if (reward.onTime) {
+                        dailyStreak += 1;
+                        task.countedInStreak = true;
+                    } else {
+                        task.countedInStreak = false;
+                    }
+
+                    userXp += reward.total;
+                    updateXpDisplay(true, true);
+                    renderTasks();
+                    playFlipAnimation(oldPositions);
+                }, 900);
+            } else {
+                renderTasks(null, { [taskId]: prevPercent });
+            }
+        };
+
+        window.requestDeleteTask = function(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            openConfirmModal(`Opravdu chceš smazat úkol "${task.title}"?`, () => {
+                const cardEl = document.querySelector(`[data-task-id="${taskId}"]`);
+                const finalizeTaskDelete = () => {
+                    tasks = tasks.filter(t => t.id !== taskId);
+                    renderTasks();
+                    showToast('Úkol byl smazán.', 'info', 'scroll');
+                };
+
+                if (cardEl) {
+                    cardEl.classList.remove('task-enter-anim', 'task-overdue', 'task-close-deadline', 'task-close-deadline-1', 'task-close-deadline-2');
+                    void cardEl.offsetWidth;
+                    cardEl.classList.add('task-exit-anim');
+                    setTimeout(finalizeTaskDelete, 300);
+                } else {
+                    finalizeTaskDelete();
+                }
+            });
+        };
+
+        // -------------------------------------------------------------
+        // EDIT TITLE & TASK COLOR MODALS
+        // -------------------------------------------------------------
+        window.openEditTitleModal = function(type, taskId, subtaskId = null) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            currentEditTarget = { type, taskId, subtaskId };
+            const input = document.getElementById('editTitleInput');
+
+            if (type === 'task') {
+                input.value = task.title;
+            } else if (type === 'subtask') {
+                const st = task.subtasks.find(s => s.id === subtaskId);
+                if (!st) return;
+                input.value = st.title;
+            }
+
+            document.getElementById('editTitleModal').classList.remove('hidden');
+            setTimeout(() => input.focus(), 50);
+        };
+
+        window.closeEditTitleModal = function() {
+            document.getElementById('editTitleModal').classList.add('hidden');
+            currentEditTarget = null;
+        };
+
+        window.saveTitleEdit = function() {
+            if (!currentEditTarget) return;
+            const newTitle = document.getElementById('editTitleInput').value.trim();
+            if (!newTitle) return;
+
+            const task = tasks.find(t => t.id === currentEditTarget.taskId);
+            if (task) {
+                if (currentEditTarget.type === 'task') {
+                    task.title = newTitle;
+                } else if (currentEditTarget.type === 'subtask') {
+                    const st = task.subtasks.find(s => s.id === currentEditTarget.subtaskId);
+                    if (st) st.title = newTitle;
+                }
+                renderTasks();
+                showToast('Název byl upraven.', 'success', 'scroll');
+            }
+            window.closeEditTitleModal();
+        };
+
+        window.openColorModal = function(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || task.completed) return;
+
+            currentTargetTaskForColor = taskId;
+            const swatchesContainer = document.getElementById('colorModalSwatches');
+            swatchesContainer.innerHTML = colorPalette.map(c => {
+                const isSelected = c.hex.toUpperCase() === task.color.toUpperCase();
+                return `
+                    <button type="button" onclick="window.applyNewTaskColor('${escapeJsString(c.hex)}')" title="${escapeHtml(c.name)}"
+                        class="w-9 h-9 rounded-full transition-transform transform hover:scale-110 flex items-center justify-center ${
+                            isSelected ? 'ring-2 ring-offset-2 ring-offset-[#151C2C] ring-indigo-400 scale-110' : ''
+                        }"
+                        style="background-color: ${escapeHtml(c.hex)};">
+                        ${isSelected ? `<i data-lucide="check" class="w-4 h-4 ${c.hex.toUpperCase() === '#FFFFFF' ? 'text-slate-900' : 'text-white'}"></i>` : ''}
+                    </button>
+                `;
+            }).join('');
+
+            document.getElementById('changeColorModal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closeColorModal = function() {
+            document.getElementById('changeColorModal').classList.add('hidden');
+            currentTargetTaskForColor = null;
+        };
+
+        window.applyNewTaskColor = function(hex) {
+            if (!currentTargetTaskForColor) return;
+            const task = tasks.find(t => t.id === currentTargetTaskForColor);
+            if (task) {
+                task.color = hex;
+                renderTasks();
+            }
+            window.closeColorModal();
+        };
+
+        // -------------------------------------------------------------
+        // CONFIRMATION MODAL & TOAST NOTIFICATIONS
+        // -------------------------------------------------------------
+        function openConfirmModal(message, onConfirm) {
+            const modal = document.getElementById('confirmModal');
+            const textEl = document.getElementById('confirmModalText');
+            const okBtn = document.getElementById('confirmModalOkBtn');
+            const cancelBtn = document.getElementById('confirmModalCancelBtn');
+
+            textEl.textContent = message;
+            modal.classList.remove('hidden');
+
+            const cleanup = () => {
+                modal.classList.add('hidden');
+                okBtn.onclick = null;
+                cancelBtn.onclick = null;
+            };
+
+            cancelBtn.onclick = cleanup;
+            okBtn.onclick = () => {
+                cleanup();
+                if (typeof onConfirm === 'function') onConfirm();
+            };
+        }
+
+        function showToast(message, type = 'info', iconName = 'scroll') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const colors = {
+                success: 'border-emerald-500/40 bg-[#151C2C]/95 text-emerald-300',
+                warning: 'border-amber-500/40 bg-[#151C2C]/95 text-amber-300',
+                info: 'border-indigo-500/40 bg-[#151C2C]/95 text-slate-200'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center space-x-2.5 px-4 py-3 rounded-xl border shadow-2xl text-xs font-semibold backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <i data-lucide="${escapeHtml(iconName)}" class="w-4 h-4 flex-shrink-0"></i>
+                <span>${escapeHtml(message)}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+
+        // -------------------------------------------------------------
+        // DATE HELPERS & TASKS RENDERING
+        // -------------------------------------------------------------
+        function getDaysDifferenceFromToday(isoDateStr) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const [y, m, d] = isoDateStr.split('-').map(Number);
+            const target = new Date(y, m - 1, d);
+            target.setHours(0, 0, 0, 0);
+            return Math.round((target - today) / (1000 * 60 * 60 * 24));
+        }
+
+        function formatCzechDateHeader(isoDateStr) {
+            const diffDays = getDaysDifferenceFromToday(isoDateStr);
+            const [y, m, d] = isoDateStr.split('-').map(Number);
+            const monthGenitive = [
+                'ledna', 'února', 'března', 'dubna', 'května', 'června',
+                'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'
+            ];
+            const dateFormatted = `${d}. ${monthGenitive[m - 1]} ${y}`;
+
+            if (diffDays === 0) return `Dnes — ${dateFormatted}`;
+            if (diffDays === 1) return `Zítra — ${dateFormatted}`;
+            if (diffDays === -1) return `Včera — ${dateFormatted}`;
+            return dateFormatted;
+        }
+
+        function getUrgencyBadgeStyle(urgency) {
+            switch (urgency) {
+                case 5: return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+                case 4: return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+                case 3: return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
+                case 2: return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+                default: return 'bg-slate-800 text-slate-400 border-slate-700';
+            }
+        }
+
+        window.renderTasks = function(newlyCreatedTaskId = null, progressStartOverrides = {}) {
+            const container = document.getElementById('tasksContainer');
+            if (!container) return;
+
+            const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+            const filterCategory = document.getElementById('filterCategorySelect')?.value || 'Vše';
+            const filterUrgency = document.getElementById('filterUrgencySelect')?.value || 'Vše';
+
+            const filteredTasks = tasks.filter(task => {
+                const matchesSearch = !searchQuery ||
+                    task.title.toLowerCase().includes(searchQuery) ||
+                    (Array.isArray(task.subtasks) && task.subtasks.some(st => st.title.toLowerCase().includes(searchQuery)));
+                const matchesCat = filterCategory === 'Vše' || task.category === filterCategory;
+                const matchesUrg = filterUrgency === 'Vše' || String(task.urgency) === String(filterUrgency);
+                return matchesSearch && matchesCat && matchesUrg;
+            });
+
+            if (filteredTasks.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-[#151C2C] border border-slate-800/80 rounded-2xl p-10 text-center space-y-2 shadow-xl">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-800/80 text-slate-500 flex items-center justify-center mx-auto mb-2">
+                            <i data-lucide="scroll" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-bold text-slate-300">Žádné úkoly k zobrazení</p>
+                        <p class="text-xs text-slate-500">Vytvoř nový úkol výše nebo uprav aktivní filtry.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            // Group tasks by dueDate
+            const grouped = {};
+            filteredTasks.forEach(task => {
+                if (!grouped[task.dueDate]) grouped[task.dueDate] = [];
+                grouped[task.dueDate].push(task);
+            });
+
+            const sortedDates = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+
+            container.innerHTML = sortedDates.map(dateStr => {
+                const dayTasks = grouped[dateStr].slice().sort((a, b) => {
+                    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                    return b.urgency - a.urgency;
+                });
+
+                const diffDays = getDaysDifferenceFromToday(dateStr);
+                const isOverdueHeader = diffDays < 0 && dayTasks.some(t => !t.completed);
+
+                return `
+                    <section class="space-y-3">
+                        <div class="flex items-center justify-between px-1">
+                            <h2 class="text-xs font-extrabold uppercase tracking-wider ${isOverdueHeader ? 'text-rose-400' : 'text-slate-400'} flex items-center space-x-2">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 ${isOverdueHeader ? 'text-rose-400' : 'text-indigo-400'}"></i>
+                                <span>${escapeHtml(formatCzechDateHeader(dateStr))}</span>
+                            </h2>
+                            <span class="text-[11px] font-semibold text-slate-500">${dayTasks.filter(t => t.completed).length} / ${dayTasks.length} hotovo</span>
+                        </div>
+
+                        <div class="space-y-3">
+                            ${dayTasks.map(task => renderSingleTaskCard(task, newlyCreatedTaskId, progressStartOverrides)).join('')}
+                        </div>
+                    </section>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+
+            // Animate progress bar width from previous percent to new percent when subtasks change
+            Object.keys(progressStartOverrides).forEach(tId => {
+                const task = tasks.find(t => t.id === tId);
+                const card = container.querySelector(`[data-task-id="${tId}"]`);
+                if (task && card && Array.isArray(task.subtasks) && task.subtasks.length > 0) {
+                    const bar = card.querySelector('.subtask-progress-fill');
+                    if (bar) {
+                        const targetPct = Math.round((task.subtasks.filter(s => s.completed).length / task.subtasks.length) * 100);
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                bar.style.width = `${targetPct}%`;
+                            });
+                        });
+                    }
+                }
+            });
+
+            if (newlyCreatedTaskId) {
+                setTimeout(() => {
+                    const card = container.querySelector(`[data-task-id="${newlyCreatedTaskId}"]`);
+                    if (card) card.classList.remove('task-enter-anim');
+                }, 500);
+            }
+        };
+
+        function renderSingleTaskCard(task, newlyCreatedTaskId, progressStartOverrides) {
+            const diffDays = getDaysDifferenceFromToday(task.dueDate);
+            let glowClass = '';
+            let deadlineBadgeHtml = '';
+
+            if (!task.completed) {
+                if (diffDays < 0) {
+                    glowClass = 'task-overdue';
+                    deadlineBadgeHtml = `<span class="px-2 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-bold">Po termínu</span>`;
+                } else if (diffDays === 0) {
+                    glowClass = 'task-close-deadline';
+                    deadlineBadgeHtml = `<span class="px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold">Dnes termín</span>`;
+                } else if (diffDays === 1) {
+                    glowClass = 'task-close-deadline-1';
+                    deadlineBadgeHtml = `<span class="px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300/80 text-[10px] font-semibold">Zítra</span>`;
+                } else if (diffDays === 2) {
+                    glowClass = 'task-close-deadline-2';
+                }
+            }
+
+            const isNew = task.id === newlyCreatedTaskId;
+            const hasSubtasks = Array.isArray(task.subtasks) && task.subtasks.length > 0;
+
+            let subtasksHtml = '';
+            if (hasSubtasks) {
+                const totalSub = task.subtasks.length;
+                const doneSub = task.subtasks.filter(s => s.completed).length;
+                const targetPct = Math.round((doneSub / totalSub) * 100);
+                const initialPct = Object.prototype.hasOwnProperty.call(progressStartOverrides, task.id)
+                    ? progressStartOverrides[task.id]
+                    : targetPct;
+
+                // Sort subtasks: incomplete first, completed moved to bottom
+                const sortedSubtasks = task.subtasks.slice().sort((a, b) => {
+                    if (a.completed === b.completed) return 0;
+                    return a.completed ? 1 : -1;
+                });
+
+                subtasksHtml = `
+                    <div class="mt-3.5 pt-3.5 border-t border-slate-800/80 space-y-2.5">
+                        <div class="flex items-center justify-between text-[11px] font-semibold">
+                            <span class="text-slate-400">Podúkoly</span>
+                            <span class="${targetPct === 100 ? 'text-emerald-400' : 'text-indigo-300'}">${doneSub} / ${totalSub} (${targetPct}%)</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-[#0B0F17] rounded-full overflow-hidden border border-slate-800/80">
+                            <div class="subtask-progress-fill h-full rounded-full ${targetPct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}" style="width: ${initialPct}%;"></div>
+                        </div>
+                        <div class="flex flex-col space-y-1.5 pt-1">
+                            ${sortedSubtasks.map(st => `
+                                <div class="group/sub flex items-center justify-between bg-[#0B0F17]/75 border border-slate-800/80 rounded-xl px-3 py-2 text-xs transition ${st.completed ? 'opacity-60' : 'hover:border-slate-700'}">
+                                    <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                                        <button type="button" onclick="window.toggleSubtaskComplete('${escapeJsString(task.id)}', '${escapeJsString(st.id)}')"
+                                            class="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition ${
+                                                st.completed
+                                                    ? 'bg-emerald-500 border-emerald-500 text-slate-950'
+                                                    : 'border-slate-600 hover:border-indigo-400 text-transparent'
+                                            } ${task.completed ? 'cursor-not-allowed' : 'cursor-pointer'}">
+                                            <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+                                        </button>
+                                        <span class="truncate ${st.completed ? 'line-through text-slate-500' : 'text-slate-200 font-medium'}">${escapeHtml(st.title)}</span>
+                                    </div>
+                                    ${!task.completed ? `
+                                        <button type="button" onclick="window.openEditTitleModal('subtask', '${escapeJsString(task.id)}', '${escapeJsString(st.id)}')" title="Upravit název podúkolu"
+                                            class="opacity-0 group-hover/sub:opacity-100 text-slate-500 hover:text-indigo-400 transition ml-2 flex-shrink-0">
+                                            <i data-lucide="edit-2" class="w-3 h-3"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <article data-task-id="${escapeHtml(task.id)}"
+                    class="group bg-[#151C2C] border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-xl transition-all duration-300 ${glowClass} ${isNew ? 'task-enter-anim' : ''} ${task.completed ? 'opacity-60 bg-[#151C2C]/70' : 'hover:border-slate-700/90'}">
+                    <div class="flex items-start justify-between gap-4">
+                        <!-- Left: Color Circle + Task Title -->
+                        <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+                            <button type="button" onclick="window.openColorModal('${escapeJsString(task.id)}')" title="${task.completed ? 'Splněný úkol' : 'Změnit barvu úkolu'}"
+                                class="w-4 h-4 rounded-full flex-shrink-0 transition-transform ${task.completed ? 'cursor-default opacity-70' : 'hover:scale-125 cursor-pointer'}"
+                                style="background-color: ${escapeHtml(task.color)}; box-shadow: 0 0 10px ${escapeHtml(task.color)}55;">
+                            </button>
+                            <div class="flex items-center space-x-2 min-w-0">
+                                <h3 class="text-base font-bold leading-snug break-words ${task.completed ? 'line-through text-slate-400' : 'text-white'}">
+                                    ${escapeHtml(task.title)}
+                                </h3>
+                                ${!task.completed ? `
+                                    <button type="button" onclick="window.openEditTitleModal('task', '${escapeJsString(task.id)}')" title="Upravit název úkolu"
+                                        class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-indigo-400 transition flex-shrink-0 p-1">
+                                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Right: Badges + Complete Circle + Delete Cross -->
+                        <div class="flex items-center space-x-2.5 flex-shrink-0">
+                            ${deadlineBadgeHtml}
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-800/90 border border-slate-700/70 text-[11px] font-semibold text-slate-300">
+                                ${escapeHtml(task.category)}
+                            </span>
+                            <span class="px-2.5 py-1 rounded-lg border text-[11px] font-bold ${getUrgencyBadgeStyle(task.urgency)}">
+                                ★ ${task.urgency}
+                            </span>
+                            <button type="button" onclick="window.toggleTaskComplete('${escapeJsString(task.id)}')" title="${task.completed ? 'Zrušit splnění' : 'Označit jako splněné'}"
+                                class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition transform hover:scale-105 ${
+                                    task.completed
+                                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
+                                        : 'border-slate-600 hover:border-emerald-400 text-transparent hover:text-emerald-400/50'
+                                }">
+                                <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+                            </button>
+                            <button type="button" onclick="window.requestDeleteTask('${escapeJsString(task.id)}')" title="Smazat úkol"
+                                class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition flex items-center justify-center">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    ${subtasksHtml}
+                </article>
+            `;
+        }
+    </script>
+</body>
+</html>
