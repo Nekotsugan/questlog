@@ -370,10 +370,10 @@
 
             <!-- RIGHT HEADER CONTROLS: XP & USER PROFILE -->
             <div class="flex items-center space-x-2.5 sm:space-x-3">
-                <!-- XP STATS BADGE (Grayish-purple theme, numeric only) -->
+                <!-- XP STATS BADGE -->
                 <div id="xpBadgeBox" class="flex items-center space-x-2 px-3.5 sm:px-4 py-2 bg-indigo-500/[0.07] border border-indigo-400/15 rounded-xl text-slate-200 font-extrabold text-xs shadow-md transition-transform duration-200 transform hover:scale-105 hover:border-indigo-400/30">
                     <i data-lucide="zap" class="w-4 h-4 text-indigo-400 fill-indigo-400/25"></i>
-                    <span id="userXp" class="text-sm tracking-tight text-indigo-100">140</span>
+                    <span id="userXp" class="text-sm tracking-tight text-indigo-100">0</span>
                 </div>
 
                 <!-- LOGGED-IN USER PILL + LOGOUT BUTTON -->
@@ -382,7 +382,7 @@
                         <div class="w-6 h-6 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
                             <i data-lucide="user" class="w-3.5 h-3.5"></i>
                         </div>
-                        <span id="currentUsernameDisplay" class="text-xs font-bold text-slate-200 max-w-[100px] truncate">Test</span>
+                        <span id="currentUsernameDisplay" class="text-xs font-bold text-slate-200 max-w-[100px] truncate">Hráč</span>
                     </div>
                     <div class="h-4 w-px bg-slate-800"></div>
                     <button type="button" onclick="window.logoutUser()" title="Odhlásit se"
@@ -688,7 +688,7 @@
         </div>
     </div>
 
-    <!-- MODAL: LOCAL AUTHENTICATION (LOGIN & REGISTRATION) -->
+    <!-- MODAL: AUTHENTICATION (LOGIN & REGISTRATION) -->
     <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-[#0B0F17]/45 backdrop-blur-[2px] p-4">
         <div class="auth-card-anim max-w-md w-full bg-[#151C2C]/95 border border-slate-800/90 rounded-2xl p-6 sm:p-7 shadow-2xl space-y-5">
             <!-- Brand Header -->
@@ -740,7 +740,7 @@
                     </div>
                 </div>
 
-                <div id="loginErrorMsg" class="hidden flex items-center space-x-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
+                <div id="loginErrorMsg" class="hidden flex items-center space-x-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium">
                     <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
                     <span>Nesprávné přihlašovací jméno nebo heslo.</span>
                 </div>
@@ -752,20 +752,20 @@
                 </button>
             </form>
 
-            <!-- REGISTER FORM (WITH SERVER-VERIFIED INVITE CODE) -->
+            <!-- REGISTRATION FORM -->
             <form id="registerForm" onsubmit="window.handleRegister(event)" class="hidden space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1.5">Přihlašovací jméno</label>
                     <div class="relative">
-                        <input type="text" id="regUsername" autocomplete="off" placeholder="Zvol si přihlašovací jméno..."
+                        <input type="text" id="regUsername" autocomplete="username" placeholder="Zvol si login..."
                             oninput="window.clearAuthFeedback()"
                             class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
-                        <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
+                        <i data-lucide="user-plus" class="w-4 h-4 text-slate-500 absolute left-3 top-2.5"></i>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Heslo (min. 6 znaků)</label>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Heslo</label>
                     <div class="relative">
                         <input type="password" id="regPassword" autocomplete="new-password" placeholder="Zvol si heslo..."
                             oninput="window.clearAuthFeedback()"
@@ -781,10 +781,14 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1.5">Speciální kód</label>
                     <div class="relative">
-                        <input type="text" id="regInviteCode" autocomplete="off" placeholder="Zadej speciální zvací kód..."
+                        <input type="password" id="regInviteCode" autocomplete="off" placeholder="Zadej speciální zvací kód..."
                             oninput="window.clearAuthFeedback()"
-                            class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
+                            class="w-full bg-[#0B0F17] border border-slate-800 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition shadow-inner">
                         <i data-lucide="key-round" class="w-4 h-4 text-indigo-400/80 absolute left-3 top-2.5"></i>
+                        <button type="button" onclick="window.togglePasswordVisibility('regInviteCode', this)" title="Zobrazit / skrýt kód"
+                            class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -863,45 +867,44 @@
             return `u_${hex}@questlog.local`;
         }
 
+        function normalizeAuthPassword(password) {
+            return password.length < 6 ? `${password}__ql_pad` : password;
+        }
+
         function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function escapeJsString(str) {
-            return String(str)
-                .replace(/\\/g, "\\\\")
+            return String(str ?? '')
+                .replace(/\\/g, '\\\\')
                 .replace(/'/g, "\\'")
-                .replace(/"/g, '\\"');
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r');
         }
 
-        window.clearInputError = function(elOrId) {
-            const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+        function triggerInputError(inputOrId) {
+            const el = typeof inputOrId === 'string' ? document.getElementById(inputOrId) : inputOrId;
             if (!el) return;
-            clearTimeout(el._errorTimeout);
-            el.classList.remove('!border-rose-500', 'ring-2', 'ring-rose-500/30', 'animate-red-shake');
-        };
-
-        function triggerInputError(elOrId) {
-            const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
-            if (!el) return;
-
             el.classList.remove('animate-red-shake');
             void el.offsetWidth;
-            el.classList.add('!border-rose-500', 'ring-2', 'ring-rose-500/30', 'animate-red-shake');
-            if (typeof el.focus === 'function') {
-                el.focus();
-            }
-
-            clearTimeout(el._errorTimeout);
-            el._errorTimeout = setTimeout(() => {
-                el.classList.remove('!border-rose-500', 'ring-2', 'ring-rose-500/30', 'animate-red-shake');
-            }, 1600);
+            el.classList.add('border-rose-500', 'animate-red-shake');
+            setTimeout(() => {
+                el.classList.remove('animate-red-shake');
+            }, 450);
         }
+
+        window.clearInputError = function(inputOrId) {
+            const el = typeof inputOrId === 'string' ? document.getElementById(inputOrId) : inputOrId;
+            if (!el) return;
+            el.classList.remove('border-rose-500', 'animate-red-shake');
+        };
 
         function formatIsoDate(dateObj) {
             const y = dateObj.getFullYear();
@@ -910,8 +913,33 @@
             return `${y}-${m}-${d}`;
         }
 
+        function formatDisplayDate(isoStr) {
+            if (!isoStr) return '';
+            const parts = String(isoStr).split('-');
+            if (parts.length !== 3) return isoStr;
+            const [y, m, d] = parts;
+            return `${parseInt(d, 10)}. ${parseInt(m, 10)}. ${y}`;
+        }
+
+        function getDeadlineStatus(dueDateStr) {
+            if (!dueDateStr) return 'normal';
+            const parts = String(dueDateStr).split('-').map(Number);
+            if (parts.length !== 3 || parts.some(isNaN)) return 'normal';
+
+            const now = new Date();
+            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const dueMidnight = new Date(parts[0], parts[1] - 1, parts[2]);
+            const diffDays = Math.round((dueMidnight - todayMidnight) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return 'overdue';
+            if (diffDays === 0) return 'today';
+            if (diffDays === 1) return 'tomorrow';
+            if (diffDays === 2) return 'two-days';
+            return 'normal';
+        }
+
         // -------------------------------------------------------------
-        // INITIALIZATION
+        // INITIALIZATION ON WINDOW LOAD
         // -------------------------------------------------------------
         window.onload = async function() {
             lucide.createIcons();
@@ -921,17 +949,8 @@
             renderColorPaletteSelector();
             renderCategoriesOverview();
             renderColorsOverview();
-            updateXpDisplay(false);
             renderTasks();
 
-            // Periodically remove completed tasks older than 1 day
-            setInterval(async () => {
-                if (currentUser && await cleanupExpiredCompletedTasks()) {
-                    renderTasks();
-                }
-            }, 60 * 1000);
-
-            // Sync Hex Color Input & Clear Duplicate Highlight
             const colorPicker = document.getElementById('newColorPicker');
             const colorHexText = document.getElementById('newColorHexText');
             if (colorPicker && colorHexText) {
@@ -940,6 +959,14 @@
                     window.clearInputError('newColorHexWrapper');
                 });
             }
+
+            // Periodically remove completed tasks older than 24 hours
+            setInterval(async () => {
+                if (currentUser && tasks.length > 0) {
+                    const removed = await cleanupExpiredCompletedTasks();
+                    if (removed) renderTasks();
+                }
+            }, 60 * 1000);
 
             // Close custom dropdowns when clicking outside
             document.addEventListener('click', (e) => {
@@ -1073,6 +1100,46 @@
             }
         }
 
+        async function syncProfileStatsToCloud() {
+            if (!supabaseClient || !currentUser) return;
+            const todayStr = formatIsoDate(new Date());
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update({
+                    xp: userXp,
+                    daily_streak: dailyStreak,
+                    last_streak_date: dailyStreak > 0 ? todayStr : null
+                })
+                .eq('id', currentUser.id);
+            if (error) {
+                console.error('Chyba při ukládání XP profilu:', error);
+            }
+        }
+
+        async function cleanupExpiredCompletedTasks() {
+            const now = Date.now();
+            const expiredIds = [];
+            tasks = tasks.filter(t => {
+                if (t.completed && t.completedAt && (now - t.completedAt >= COMPLETED_TASK_TTL_MS)) {
+                    expiredIds.push(t.id);
+                    return false;
+                }
+                return true;
+            });
+
+            if (expiredIds.length > 0 && supabaseClient && currentUser) {
+                const { error } = await supabaseClient
+                    .from('tasks')
+                    .delete()
+                    .in('id', expiredIds)
+                    .eq('user_id', currentUser.id);
+                if (error) {
+                    console.error('Chyba při mazání expirovaných úkolů:', error);
+                }
+            }
+            return expiredIds.length > 0;
+        }
+
         window.switchAuthMode = function(mode) {
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
@@ -1151,7 +1218,7 @@
                 const internalEmail = usernameToInternalEmail(username);
                 const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: internalEmail,
-                    password
+                    password: normalizeAuthPassword(password)
                 });
 
                 if (error || !data?.user) {
@@ -1196,15 +1263,15 @@
             const password = passwordInput.value;
             const inviteCode = codeInput.value.trim();
 
-            if (username.length < 2) {
+            if (!username) {
                 triggerInputError(usernameInput);
-                statusText.textContent = 'Přihlašovací jméno musí mít alespoň 2 znaky.';
+                statusText.textContent = 'Zadej prosím přihlašovací jméno.';
                 statusBox.classList.remove('hidden');
                 return;
             }
-            if (password.length < 6) {
+            if (!password) {
                 triggerInputError(passwordInput);
-                statusText.textContent = 'Heslo musí mít alespoň 6 znaků.';
+                statusText.textContent = 'Zadej prosím heslo.';
                 statusBox.classList.remove('hidden');
                 return;
             }
@@ -1216,47 +1283,48 @@
             }
 
             submitBtn.disabled = true;
-            submitText.textContent = 'Ověřuji kód a vytvářím účet...';
+            submitText.textContent = 'Vytvářím účet...';
 
             try {
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/register-user`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': SUPABASE_PUBLISHABLE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
-                    },
-                    body: JSON.stringify({ username, password, inviteCode })
+                const { data: fnData, error: fnError } = await supabaseClient.functions.invoke('register-user', {
+                    body: { username, password, inviteCode }
                 });
 
-                const result = await response.json().catch(() => ({}));
+                if (fnError || fnData?.error) {
+                    let errMessage = fnData?.error || 'Registrace se nezdařila.';
+                    if (fnError && fnError.context && typeof fnError.context.json === 'function') {
+                        try {
+                            const errBody = await fnError.context.json();
+                            if (errBody?.error) errMessage = errBody.error;
+                        } catch (_) {}
+                    } else if (fnError?.message && !fnData?.error) {
+                        errMessage = fnError.message;
+                    }
 
-                if (!response.ok || result.error) {
-                    const errMsg = result.error || 'Registrace se nezdařila.';
-                    statusText.textContent = errMsg;
+                    statusText.textContent = errMessage;
                     statusBox.classList.remove('hidden');
-                    if (errMsg.toLowerCase().includes('kód')) {
+                    if (errMessage.toLowerCase().includes('kód')) {
                         triggerInputError(codeInput);
-                    } else if (errMsg.toLowerCase().includes('jméno')) {
+                    } else if (errMessage.toLowerCase().includes('jméno')) {
                         triggerInputError(usernameInput);
-                    } else if (errMsg.toLowerCase().includes('heslo')) {
+                    } else if (errMessage.toLowerCase().includes('hesl') || errMessage.toLowerCase().includes('password')) {
                         triggerInputError(passwordInput);
                     }
                     lucide.createIcons();
                     return;
                 }
 
-                // Automatically sign in the newly created user
+                // Automatically log in newly created account
                 const internalEmail = usernameToInternalEmail(username);
                 const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({
                     email: internalEmail,
-                    password
+                    password: normalizeAuthPassword(password)
                 });
 
                 if (signInError || !signInData?.user) {
                     window.switchAuthMode('login');
                     document.getElementById('loginUsername').value = username;
-                    showToast('Účet byl vytvořen! Nyní se přihlas.', 'success', 'user-plus');
+                    showToast('Účet byl vytvořen! Nyní se přihlas.', 'success', 'check-circle');
                     return;
                 }
 
@@ -1266,9 +1334,9 @@
                 statusBox.classList.add('hidden');
 
                 await loadUserCloudData(signInData.user);
-                showToast(`Účet ${currentUsername} byl úspěšně vytvořen!`, 'success', 'user-plus');
+                showToast(`Účet ${currentUsername} byl úspěšně vytvořen!`, 'success', 'sparkles');
             } catch (err) {
-                statusText.textContent = 'Nepodařilo se spojit se serverem. Zkus to prosím znovu.';
+                statusText.textContent = 'Neočekávaná chyba při komunikaci se serverem.';
                 statusBox.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
@@ -1287,208 +1355,32 @@
 
             currentUser = null;
             currentUsername = '';
+            userXp = 0;
+            dailyStreak = 0;
             tasks = [];
             categories = [];
             colorPalette = [{ name: "Bílá", hex: "#FFFFFF" }];
-            userXp = 0;
-            dailyStreak = 0;
+            selectedTaskColor = "#FFFFFF";
+            tempSubtasks = [];
 
-            updateXpDisplay(false);
+            renderTempSubtasks();
             renderCategoryDropdowns();
             renderColorPaletteSelector();
             renderCategoriesOverview();
             renderColorsOverview();
+            updateXpDisplay(false);
             renderTasks();
 
-            document.getElementById('mainContent').classList.add('app-locked');
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
             window.switchAuthMode('login');
+            document.getElementById('mainContent').classList.add('app-locked');
             document.getElementById('authModal').classList.remove('hidden');
-            showToast('Byl jsi odhlášen.', 'info', 'user');
+            showToast('Byl jsi odhlášen.', 'info', 'log-out');
         };
 
         // -------------------------------------------------------------
-        // CUSTOM DROPDOWN SELECT ENGINE
+        // CUSTOM DROPDOWNS & CREATION TABS
         // -------------------------------------------------------------
-        function closeAllCustomSelects(exceptId = null) {
-            document.querySelectorAll('.custom-select-menu').forEach(menu => {
-                const wrapper = menu.closest('.custom-select-wrapper');
-                const id = wrapper ? wrapper.dataset.selectId : null;
-                if (id !== exceptId) {
-                    menu.classList.add('hidden');
-                    const chevron = document.getElementById(`${id}Chevron`);
-                    if (chevron) chevron.classList.remove('rotate-180');
-                }
-            });
-        }
-
-        window.toggleCustomSelect = function(selectId) {
-            const menu = document.getElementById(`${selectId}Menu`);
-            const chevron = document.getElementById(`${selectId}Chevron`);
-            if (!menu) return;
-
-            const isHidden = menu.classList.contains('hidden');
-            closeAllCustomSelects(selectId);
-
-            if (isHidden) {
-                menu.classList.remove('hidden');
-                if (chevron) chevron.classList.add('rotate-180');
-            } else {
-                menu.classList.add('hidden');
-                if (chevron) chevron.classList.remove('rotate-180');
-            }
-        };
-
-        function setCustomSelectOptions(selectId, options, selectedValue, onChangeCallback = null) {
-            const hiddenInput = document.getElementById(selectId);
-            const labelEl = document.getElementById(`${selectId}Label`);
-            const menuEl = document.getElementById(`${selectId}Menu`);
-            if (!hiddenInput || !labelEl || !menuEl) return;
-
-            const strVal = String(selectedValue);
-            hiddenInput.value = strVal;
-
-            const currentObj = options.find(o => String(o.value) === strVal) || options[0];
-            if (currentObj) {
-                hiddenInput.value = String(currentObj.value);
-                labelEl.textContent = currentObj.label;
-            }
-
-            menuEl.innerHTML = '';
-            options.forEach(opt => {
-                const isSelected = String(opt.value) === String(hiddenInput.value);
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = `w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition flex items-center justify-between ${
-                    isSelected
-                        ? 'bg-indigo-600 text-white font-semibold'
-                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`;
-                btn.innerHTML = `<span class="truncate">${escapeHtml(opt.label)}</span>${isSelected ? '<i data-lucide="check" class="w-3 h-3 flex-shrink-0 ml-1.5"></i>' : ''}`;
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    hiddenInput.value = String(opt.value);
-                    labelEl.textContent = opt.label;
-                    setCustomSelectOptions(selectId, options, opt.value, onChangeCallback);
-                    closeAllCustomSelects();
-                    if (typeof onChangeCallback === 'function') {
-                        onChangeCallback(opt.value);
-                    }
-                };
-                menuEl.appendChild(btn);
-            });
-            lucide.createIcons();
-        }
-
-        function initDateSelects() {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth() + 1;
-            const currentDay = today.getDate();
-
-            const monthNames = [
-                'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
-                'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
-            ];
-
-            const yearOptions = [];
-            for (let y = currentYear - 1; y <= currentYear + 5; y++) {
-                yearOptions.push({ value: y, label: String(y) });
-            }
-
-            const monthOptions = monthNames.map((name, idx) => ({
-                value: idx + 1,
-                label: name
-            }));
-
-            const updateDaysForMonthYear = (desiredDay) => {
-                const m = parseInt(document.getElementById('taskMonthSelect').value, 10) || currentMonth;
-                const y = parseInt(document.getElementById('taskYearSelect').value, 10) || currentYear;
-                const maxDays = new Date(y, m, 0).getDate();
-                const safeDay = Math.min(desiredDay, maxDays);
-
-                const dayOptions = [];
-                for (let d = 1; d <= maxDays; d++) {
-                    dayOptions.push({ value: d, label: `${d}.` });
-                }
-                setCustomSelectOptions('taskDaySelect', dayOptions, safeDay);
-            };
-
-            setCustomSelectOptions('taskYearSelect', yearOptions, currentYear, () => {
-                const prevDay = parseInt(document.getElementById('taskDaySelect').value, 10) || currentDay;
-                updateDaysForMonthYear(prevDay);
-            });
-
-            setCustomSelectOptions('taskMonthSelect', monthOptions, currentMonth, () => {
-                const prevDay = parseInt(document.getElementById('taskDaySelect').value, 10) || currentDay;
-                updateDaysForMonthYear(prevDay);
-            });
-
-            updateDaysForMonthYear(currentDay);
-        }
-
-        function initUrgencySelects() {
-            const taskUrgencyOptions = [
-                { value: '5', label: '★ 5 (Kritická)' },
-                { value: '4', label: '★ 4 (Vysoká)' },
-                { value: '3', label: '★ 3 (Normální)' },
-                { value: '2', label: '★ 2 (Nízká)' },
-                { value: '1', label: '★ 1 (Minimální)' }
-            ];
-            setCustomSelectOptions('taskUrgencySelect', taskUrgencyOptions, '3');
-
-            const filterUrgencyOptions = [
-                { value: 'Vše', label: 'Vše' },
-                { value: '5', label: '★ 5' },
-                { value: '4', label: '★ 4' },
-                { value: '3', label: '★ 3' },
-                { value: '2', label: '★ 2' },
-                { value: '1', label: '★ 1' }
-            ];
-            setCustomSelectOptions('filterUrgencySelect', filterUrgencyOptions, 'Vše', () => {
-                window.renderTasks();
-            });
-        }
-
-        // -------------------------------------------------------------
-        // AUTO-CLEANUP OF COMPLETED TASKS AFTER 1 DAY
-        // -------------------------------------------------------------
-        async function cleanupExpiredCompletedTasks() {
-            const now = Date.now();
-            const expiredIds = [];
-
-            tasks = tasks.filter(task => {
-                if (!task.completed) return true;
-                const isExpired = typeof task.completedAt === 'number'
-                    ? (now - task.completedAt) >= COMPLETED_TASK_TTL_MS
-                    : getDaysDifferenceFromToday(task.dueDate) <= -1;
-
-                if (isExpired) {
-                    expiredIds.push(task.id);
-                    return false;
-                }
-                return true;
-            });
-
-            if (expiredIds.length > 0 && currentUser && supabaseClient) {
-                try {
-                    await supabaseClient
-                        .from('tasks')
-                        .delete()
-                        .in('id', expiredIds);
-                } catch (err) {
-                    console.error('Chyba při automatickém mazání starých splněných úkolů:', err);
-                }
-            }
-
-            return expiredIds.length > 0;
-        }
-
-        // -------------------------------------------------------------
-        // TABS SWITCHING
-        // -------------------------------------------------------------
-        window.switchCreationTab = function(tabName) {
+        window.switchCreationTab = function(tab) {
             const tabs = {
                 quest: { btn: 'tabQuestBtn', content: 'tabQuestContent' },
                 category: { btn: 'tabCategoryBtn', content: 'tabCategoryContent' },
@@ -1498,9 +1390,7 @@
             Object.keys(tabs).forEach(key => {
                 const btn = document.getElementById(tabs[key].btn);
                 const content = document.getElementById(tabs[key].content);
-                if (!btn || !content) return;
-
-                if (key === tabName) {
+                if (key === tab) {
                     btn.className = 'flex items-center space-x-2 px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30 transition';
                     content.classList.remove('hidden');
                 } else {
@@ -1511,78 +1401,190 @@
             lucide.createIcons();
         };
 
-        // -------------------------------------------------------------
-        // CATEGORIES MANAGEMENT (CLOUD SYNCED)
-        // -------------------------------------------------------------
-        function renderCategoryDropdowns() {
-            const currentTaskCat = document.getElementById('taskCategorySelect').value || 'Default';
-            const taskCatOptions = [
-                { value: 'Default', label: 'Default' },
-                ...categories.map(c => ({ value: c, label: c }))
+        window.toggleCustomSelect = function(selectId) {
+            const menu = document.getElementById(`${selectId}Menu`);
+            const chevron = document.getElementById(`${selectId}Chevron`);
+            if (!menu) return;
+
+            const isCurrentlyHidden = menu.classList.contains('hidden');
+            closeAllCustomSelects();
+
+            if (isCurrentlyHidden) {
+                menu.classList.remove('hidden');
+                if (chevron) chevron.classList.add('rotate-180');
+            }
+        };
+
+        function closeAllCustomSelects() {
+            document.querySelectorAll('.custom-select-menu').forEach(menu => menu.classList.add('hidden'));
+            document.querySelectorAll('[id$="Chevron"]').forEach(chev => chev.classList.remove('rotate-180'));
+        }
+
+        window.selectCustomOption = function(selectId, value, label) {
+            const input = document.getElementById(selectId);
+            const labelEl = document.getElementById(`${selectId}Label`);
+            if (input) input.value = value;
+            if (labelEl) labelEl.textContent = label;
+            closeAllCustomSelects();
+
+            if (selectId === 'taskMonthSelect' || selectId === 'taskYearSelect') {
+                updateDaysInMonth();
+            } else if (selectId === 'filterCategorySelect' || selectId === 'filterUrgencySelect') {
+                window.renderTasks();
+            }
+        };
+
+        function populateCustomSelectMenu(selectId, options, selectedValue) {
+            const menu = document.getElementById(`${selectId}Menu`);
+            const input = document.getElementById(selectId);
+            const labelEl = document.getElementById(`${selectId}Label`);
+            if (!menu) return;
+
+            menu.innerHTML = '';
+            options.forEach(opt => {
+                const isSelected = String(opt.value) === String(selectedValue);
+                if (isSelected) {
+                    if (input) input.value = opt.value;
+                    if (labelEl) labelEl.textContent = opt.label;
+                }
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-full text-left px-3 py-2 rounded-lg text-xs transition flex items-center justify-between ${
+                    isSelected
+                        ? 'bg-indigo-600/20 text-indigo-300 font-bold'
+                        : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                }`;
+                btn.innerHTML = `<span class="truncate">${escapeHtml(opt.label)}</span>${isSelected ? '<span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0 ml-2"></span>' : ''}`;
+                btn.onclick = () => window.selectCustomOption(selectId, opt.value, opt.label);
+                menu.appendChild(btn);
+            });
+        }
+
+        function initDateSelects() {
+            const now = new Date();
+            const currentDay = now.getDate();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+
+            const months = [
+                { value: 1, label: 'Leden' },
+                { value: 2, label: 'Únor' },
+                { value: 3, label: 'Březen' },
+                { value: 4, label: 'Duben' },
+                { value: 5, label: 'Květen' },
+                { value: 6, label: 'Červen' },
+                { value: 7, label: 'Červenec' },
+                { value: 8, label: 'Srpen' },
+                { value: 9, label: 'Září' },
+                { value: 10, label: 'Říjen' },
+                { value: 11, label: 'Listopad' },
+                { value: 12, label: 'Prosinec' }
             ];
-            setCustomSelectOptions(
+
+            const years = [];
+            for (let y = currentYear; y <= currentYear + 5; y++) {
+                years.push({ value: y, label: String(y) });
+            }
+
+            populateCustomSelectMenu('taskMonthSelect', months, currentMonth);
+            populateCustomSelectMenu('taskYearSelect', years, currentYear);
+            updateDaysInMonth(currentDay);
+        }
+
+        function updateDaysInMonth(preferredDay = null) {
+            const month = parseInt(document.getElementById('taskMonthSelect')?.value || '1', 10);
+            const year = parseInt(document.getElementById('taskYearSelect')?.value || '2026', 10);
+            const currentSelectedDay = preferredDay ?? parseInt(document.getElementById('taskDaySelect')?.value || '1', 10);
+
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const validDay = Math.min(currentSelectedDay, daysInMonth);
+
+            const dayOptions = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                dayOptions.push({ value: d, label: `${d}.` });
+            }
+            populateCustomSelectMenu('taskDaySelect', dayOptions, validDay);
+        }
+
+        function initUrgencySelects() {
+            const urgencyOptions = [
+                { value: '1', label: '★ 1 (Nízká)' },
+                { value: '2', label: '★★ 2 (Klidná)' },
+                { value: '3', label: '★★★ 3 (Normální)' },
+                { value: '4', label: '★★★★ 4 (Vysoká)' },
+                { value: '5', label: '★★★★★ 5 (Kritická)' }
+            ];
+            populateCustomSelectMenu('taskUrgencySelect', urgencyOptions, '3');
+
+            const filterUrgencyOptions = [
+                { value: 'Vše', label: 'Vše' },
+                { value: '5', label: '★★★★★ (5)' },
+                { value: '4', label: '★★★★ (4)' },
+                { value: '3', label: '★★★ (3)' },
+                { value: '2', label: '★★ (2)' },
+                { value: '1', label: '★ (1)' }
+            ];
+            populateCustomSelectMenu('filterUrgencySelect', filterUrgencyOptions, 'Vše');
+        }
+
+        function renderCategoryDropdowns() {
+            const allCats = ['Default', ...categories.filter(c => c !== 'Default')];
+            const currentTaskCat = document.getElementById('taskCategorySelect')?.value || 'Default';
+            const validTaskCat = allCats.includes(currentTaskCat) ? currentTaskCat : 'Default';
+
+            populateCustomSelectMenu(
                 'taskCategorySelect',
-                taskCatOptions,
-                taskCatOptions.some(o => o.value === currentTaskCat) ? currentTaskCat : 'Default'
+                allCats.map(c => ({ value: c, label: c })),
+                validTaskCat
             );
 
-            const currentFilterCat = document.getElementById('filterCategorySelect').value || 'Vše';
-            const filterCatOptions = [
-                { value: 'Vše', label: 'Vše' },
-                { value: 'Default', label: 'Default' },
-                ...categories.map(c => ({ value: c, label: c }))
-            ];
-            setCustomSelectOptions(
+            const currentFilterCat = document.getElementById('filterCategorySelect')?.value || 'Vše';
+            const validFilterCat = (currentFilterCat === 'Vše' || allCats.includes(currentFilterCat)) ? currentFilterCat : 'Vše';
+
+            populateCustomSelectMenu(
                 'filterCategorySelect',
-                filterCatOptions,
-                filterCatOptions.some(o => o.value === currentFilterCat) ? currentFilterCat : 'Vše',
-                () => window.renderTasks()
+                [{ value: 'Vše', label: 'Vše' }, ...allCats.map(c => ({ value: c, label: c }))],
+                validFilterCat
             );
         }
 
-        function renderCategoriesOverview(newlyAddedName = null) {
+        // -------------------------------------------------------------
+        // CATEGORIES & COLORS MANAGEMENT
+        // -------------------------------------------------------------
+        function renderCategoriesOverview(highlightCat = null) {
             const container = document.getElementById('categoriesOverviewList');
             if (!container) return;
 
-            const allItems = ['Default', ...categories];
-            container.innerHTML = allItems.map(cat => {
+            const allCats = ['Default', ...categories.filter(c => c !== 'Default')];
+            container.innerHTML = allCats.map(cat => {
                 const isDefault = cat === 'Default';
-                const isNew = newlyAddedName && cat.toLowerCase() === newlyAddedName.toLowerCase();
+                const isNew = highlightCat && cat.toLowerCase() === highlightCat.toLowerCase();
                 return `
-                    <div data-cat-item="${escapeHtml(cat)}" class="${isNew ? 'item-enter-anim' : ''} flex items-center justify-between bg-[#151C2C] border border-slate-800/90 rounded-xl px-3 py-2 text-xs">
-                        <span class="font-semibold text-slate-200 truncate pr-2">${escapeHtml(cat)}</span>
+                    <div data-cat-item="${escapeHtml(cat)}" class="flex items-center justify-between px-3 py-2 bg-[#151C2C] border border-slate-800 rounded-xl text-xs ${isNew ? 'item-enter-anim' : ''}">
+                        <span class="font-semibold text-slate-200 truncate">${escapeHtml(cat)}</span>
                         ${isDefault
-                            ? `<span title="Výchozí kategorii nelze smazat" class="text-slate-500 flex-shrink-0"><i data-lucide="lock" class="w-3.5 h-3.5"></i></span>`
-                            : `<button type="button" onclick="window.requestDeleteCategory('${escapeJsString(cat)}')" title="Smazat kategorii" class="text-slate-500 hover:text-rose-400 transition flex-shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>`
+                            ? `<i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500 flex-shrink-0" title="Výchozí kategorie"></i>`
+                            : `<button type="button" onclick="window.deleteCategory('${escapeJsString(cat)}')" class="text-slate-500 hover:text-rose-400 transition ml-2 flex-shrink-0" title="Smazat kategorii">
+                                   <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                               </button>`
                         }
                     </div>
                 `;
             }).join('');
-
             lucide.createIcons();
-
-            if (newlyAddedName) {
-                setTimeout(() => {
-                    const el = container.querySelector(`[data-cat-item="${CSS.escape(newlyAddedName)}"]`);
-                    if (el) el.classList.remove('item-enter-anim');
-                }, 420);
-            }
         }
 
         window.createNewCategory = async function(e) {
             e.preventDefault();
-            if (!currentUser || !supabaseClient) return;
-
             const input = document.getElementById('newCatName');
             const name = input.value.trim();
             if (!name) return;
 
-            const isDuplicate = name.toLowerCase() === 'default' ||
-                categories.some(c => c.toLowerCase() === name.toLowerCase());
-
-            if (isDuplicate) {
+            const allCats = ['Default', ...categories];
+            if (allCats.some(c => c.toLowerCase() === name.toLowerCase())) {
                 triggerInputError(input);
-                showToast(`Kategorie "${name}" už existuje.`, 'warning', 'tag');
+                showToast('Tato kategorie už existuje.', 'warning', 'alert-circle');
                 return;
             }
 
@@ -1590,53 +1592,44 @@
             input.value = '';
             renderCategoryDropdowns();
             renderCategoriesOverview(name);
-            showToast(`Kategorie "${name}" byla přidána.`, 'success', 'tag');
+            showToast(`Kategorie "${name}" přidána.`, 'success', 'tag');
 
-            const { error } = await supabaseClient
-                .from('categories')
-                .insert({ user_id: currentUser.id, name });
-
-            if (error) {
-                console.error('Chyba při ukládání kategorie:', error);
-                showToast('Nepodařilo se uložit kategorii do cloudu.', 'warning', 'alert-triangle');
+            if (supabaseClient && currentUser) {
+                const { error } = await supabaseClient
+                    .from('categories')
+                    .insert({ user_id: currentUser.id, name });
+                if (error) {
+                    console.error('Chyba při ukládání kategorie:', error);
+                }
             }
         };
 
-        window.requestDeleteCategory = function(catName) {
-            openConfirmModal(`Opravdu chceš smazat kategorii "${catName}"? Úkoly v této kategorii se přesunou do Default.`, () => {
-                const itemEl = document.querySelector(`[data-cat-item="${CSS.escape(catName)}"]`);
-                const finalizeDelete = async () => {
-                    categories = categories.filter(c => c !== catName);
-                    tasks.forEach(t => {
-                        if (t.category === catName) t.category = 'Default';
-                    });
-                    renderCategoryDropdowns();
-                    renderCategoriesOverview();
-                    renderTasks();
-                    showToast(`Kategorie "${catName}" byla smazána.`, 'info', 'tag');
+        window.deleteCategory = async function(catName) {
+            if (catName === 'Default') return;
 
-                    if (currentUser && supabaseClient) {
-                        await Promise.all([
-                            supabaseClient.from('categories').delete().eq('user_id', currentUser.id).eq('name', catName),
-                            supabaseClient.from('tasks').update({ category: 'Default' }).eq('user_id', currentUser.id).eq('category', catName)
-                        ]);
-                    }
-                };
+            const el = document.querySelector(`[data-cat-item="${CSS.escape(catName)}"]`);
+            if (el) el.classList.add('item-exit-anim');
 
-                if (itemEl) {
-                    itemEl.classList.remove('item-enter-anim');
-                    void itemEl.offsetWidth;
-                    itemEl.classList.add('item-exit-anim');
-                    setTimeout(finalizeDelete, 260);
-                } else {
-                    finalizeDelete();
+            setTimeout(async () => {
+                categories = categories.filter(c => c !== catName);
+                tasks.forEach(t => {
+                    if (t.category === catName) t.category = 'Default';
+                });
+
+                renderCategoryDropdowns();
+                renderCategoriesOverview();
+                renderTasks();
+                showToast(`Kategorie "${catName}" smazána.`, 'info', 'trash-2');
+
+                if (supabaseClient && currentUser) {
+                    await Promise.all([
+                        supabaseClient.from('categories').delete().eq('user_id', currentUser.id).eq('name', catName),
+                        supabaseClient.from('tasks').update({ category: 'Default' }).eq('user_id', currentUser.id).eq('category', catName)
+                    ]);
                 }
-            });
+            }, 240);
         };
 
-        // -------------------------------------------------------------
-        // COLOR PALETTE MANAGEMENT (CLOUD SYNCED)
-        // -------------------------------------------------------------
         function renderColorPaletteSelector() {
             const container = document.getElementById('colorPaletteSelect');
             if (!container) return;
@@ -1648,12 +1641,10 @@
             container.innerHTML = colorPalette.map(c => {
                 const isSelected = c.hex.toUpperCase() === selectedTaskColor.toUpperCase();
                 return `
-                    <button type="button" onclick="window.selectTaskColor('${escapeJsString(c.hex)}')" title="${escapeHtml(c.name)}"
-                        class="w-7 h-7 rounded-full transition-transform transform hover:scale-110 flex items-center justify-center ${
-                            isSelected ? 'ring-2 ring-offset-2 ring-offset-[#151C2C] ring-indigo-400 scale-110' : 'opacity-85 hover:opacity-100'
-                        }"
+                    <button type="button" onclick="window.selectTaskColor('${escapeJsString(c.hex)}')" title="${escapeHtml(c.name)} (${escapeHtml(c.hex)})"
+                        class="w-7 h-7 rounded-full transition transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-offset-2 ring-offset-[#151C2C] ring-indigo-400 scale-110' : 'opacity-80 hover:opacity-100'}"
                         style="background-color: ${escapeHtml(c.hex)};">
-                        ${isSelected ? `<i data-lucide="check" class="w-3.5 h-3.5 ${c.hex.toUpperCase() === '#FFFFFF' ? 'text-slate-900' : 'text-white'}"></i>` : ''}
+                        ${isSelected ? `<i data-lucide="check" class="w-3.5 h-3.5 ${c.hex.toUpperCase() === '#FFFFFF' ? 'text-slate-900' : 'text-white'} stroke-[3]"></i>` : ''}
                     </button>
                 `;
             }).join('');
@@ -1661,152 +1652,110 @@
         }
 
         window.selectTaskColor = function(hex) {
-            selectedTaskColor = hex;
+            selectedTaskColor = hex.toUpperCase();
             renderColorPaletteSelector();
         };
 
-        function renderColorsOverview(newlyAddedHex = null) {
+        function renderColorsOverview(highlightHex = null) {
             const container = document.getElementById('colorsOverviewList');
             if (!container) return;
 
             container.innerHTML = colorPalette.map(c => {
-                const isDefaultWhite = c.hex.toUpperCase() === '#FFFFFF' && c.name.toLowerCase() === 'bílá';
-                const isNew = newlyAddedHex && c.hex.toUpperCase() === newlyAddedHex.toUpperCase();
+                const isBuiltIn = c.hex.toUpperCase() === '#FFFFFF' && c.name.toLowerCase() === 'bílá';
+                const isNew = highlightHex && c.hex.toUpperCase() === highlightHex.toUpperCase();
                 return `
-                    <div data-color-hex="${escapeHtml(c.hex)}" class="${isNew ? 'item-enter-anim' : ''} flex items-center justify-between bg-[#151C2C] border border-slate-800/90 rounded-xl px-3 py-2 text-xs">
-                        <div class="flex items-center space-x-2 min-w-0 pr-2">
-                            <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 border border-slate-700" style="background-color: ${escapeHtml(c.hex)};"></span>
+                    <div data-color-item="${escapeHtml(c.hex)}" class="flex items-center justify-between px-3 py-2 bg-[#151C2C] border border-slate-800 rounded-xl text-xs ${isNew ? 'item-enter-anim' : ''}">
+                        <div class="flex items-center space-x-2 truncate">
+                            <span class="w-3.5 h-3.5 rounded-full flex-shrink-0 border border-white/20" style="background-color: ${escapeHtml(c.hex)};"></span>
                             <span class="font-semibold text-slate-200 truncate">${escapeHtml(c.name)}</span>
                         </div>
-                        ${isDefaultWhite
-                            ? `<span title="Výchozí barvu nelze smazat" class="text-slate-500 flex-shrink-0"><i data-lucide="lock" class="w-3.5 h-3.5"></i></span>`
-                            : `<button type="button" onclick="window.requestDeleteColor('${escapeJsString(c.hex)}', '${escapeJsString(c.name)}')" title="Smazat barvu" class="text-slate-500 hover:text-rose-400 transition flex-shrink-0"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>`
+                        ${isBuiltIn
+                            ? `<i data-lucide="lock" class="w-3.5 h-3.5 text-slate-500 flex-shrink-0" title="Výchozí barva"></i>`
+                            : `<button type="button" onclick="window.deleteColor('${escapeJsString(c.hex)}')" class="text-slate-500 hover:text-rose-400 transition ml-2 flex-shrink-0" title="Smazat barvu">
+                                   <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                               </button>`
                         }
                     </div>
                 `;
             }).join('');
-
             lucide.createIcons();
-
-            if (newlyAddedHex) {
-                setTimeout(() => {
-                    const el = container.querySelector(`[data-color-hex="${CSS.escape(newlyAddedHex)}"]`);
-                    if (el) el.classList.remove('item-enter-anim');
-                }, 420);
-            }
         }
 
         window.createNewColor = async function(e) {
             e.preventDefault();
-            if (!currentUser || !supabaseClient) return;
-
             const nameInput = document.getElementById('newColorName');
-            const picker = document.getElementById('newColorPicker');
+            const hexInput = document.getElementById('newColorHexText');
             const name = nameInput.value.trim();
-            const hex = picker.value.toUpperCase();
+            const hex = hexInput.value.trim().toUpperCase();
+            if (!name || !hex) return;
 
-            if (!name) return;
-
-            const duplicateName = colorPalette.some(c => c.name.toLowerCase() === name.toLowerCase());
-            if (duplicateName) {
+            if (colorPalette.some(c => c.name.toLowerCase() === name.toLowerCase())) {
                 triggerInputError(nameInput);
-                showToast(`Barva s názvem "${name}" už existuje.`, 'warning', 'palette');
+                showToast('Barva s tímto názvem už existuje.', 'warning', 'alert-circle');
                 return;
             }
-
-            const duplicateHex = colorPalette.some(c => c.hex.toUpperCase() === hex);
-            if (duplicateHex) {
+            if (colorPalette.some(c => c.hex.toUpperCase() === hex)) {
                 triggerInputError('newColorHexWrapper');
-                showToast('Tento barevný odstín už v paletě existuje.', 'warning', 'palette');
+                showToast('Tento odstín už v paletě je.', 'warning', 'alert-circle');
                 return;
             }
 
             colorPalette.push({ name, hex });
+            selectedTaskColor = hex;
             nameInput.value = '';
             renderColorPaletteSelector();
             renderColorsOverview(hex);
-            showToast(`Barva "${name}" byla přidána.`, 'success', 'palette');
+            showToast(`Barva "${name}" přidána.`, 'success', 'palette');
 
-            const { error } = await supabaseClient
-                .from('colors')
-                .insert({ user_id: currentUser.id, name, hex });
-
-            if (error) {
-                console.error('Chyba při ukládání barvy:', error);
-                showToast('Nepodařilo se uložit barvu do cloudu.', 'warning', 'alert-triangle');
+            if (supabaseClient && currentUser) {
+                const { error } = await supabaseClient
+                    .from('colors')
+                    .insert({ user_id: currentUser.id, name, hex });
+                if (error) {
+                    console.error('Chyba při ukládání barvy:', error);
+                }
             }
         };
 
-        window.requestDeleteColor = function(hex, colorName) {
-            openConfirmModal(`Opravdu chceš smazat barvu "${colorName}"?`, () => {
-                const itemEl = document.querySelector(`[data-color-hex="${CSS.escape(hex)}"]`);
-                const finalizeDelete = async () => {
-                    colorPalette = colorPalette.filter(c => c.hex.toUpperCase() !== hex.toUpperCase());
-                    if (selectedTaskColor.toUpperCase() === hex.toUpperCase()) {
-                        selectedTaskColor = colorPalette[0]?.hex || '#FFFFFF';
-                    }
-                    tasks.forEach(t => {
-                        if (t.color.toUpperCase() === hex.toUpperCase()) {
-                            t.color = '#FFFFFF';
-                        }
-                    });
-                    renderColorPaletteSelector();
-                    renderColorsOverview();
-                    renderTasks();
-                    showToast(`Barva "${colorName}" byla smazána.`, 'info', 'palette');
+        window.deleteColor = async function(hex) {
+            const targetHex = hex.toUpperCase();
+            if (targetHex === '#FFFFFF') return;
 
-                    if (currentUser && supabaseClient) {
-                        await Promise.all([
-                            supabaseClient.from('colors').delete().eq('user_id', currentUser.id).eq('hex', hex),
-                            supabaseClient.from('tasks').update({ color: '#FFFFFF' }).eq('user_id', currentUser.id).eq('color', hex)
-                        ]);
-                    }
-                };
+            const el = document.querySelector(`[data-color-item="${CSS.escape(targetHex)}"]`);
+            if (el) el.classList.add('item-exit-anim');
 
-                if (itemEl) {
-                    itemEl.classList.remove('item-enter-anim');
-                    void itemEl.offsetWidth;
-                    itemEl.classList.add('item-exit-anim');
-                    setTimeout(finalizeDelete, 260);
-                } else {
-                    finalizeDelete();
+            setTimeout(async () => {
+                colorPalette = colorPalette.filter(c => c.hex.toUpperCase() !== targetHex);
+                tasks.forEach(t => {
+                    if (t.color.toUpperCase() === targetHex) t.color = '#FFFFFF';
+                });
+
+                renderColorPaletteSelector();
+                renderColorsOverview();
+                renderTasks();
+                showToast('Barva byla odstraněna z palety.', 'info', 'trash-2');
+
+                if (supabaseClient && currentUser) {
+                    await Promise.all([
+                        supabaseClient.from('colors').delete().eq('user_id', currentUser.id).eq('hex', targetHex),
+                        supabaseClient.from('tasks').update({ color: '#FFFFFF' }).eq('user_id', currentUser.id).eq('color', targetHex)
+                    ]);
                 }
-            });
+            }, 240);
         };
 
         // -------------------------------------------------------------
-        // TEMPORARY SUBTASKS IN CREATION FORM
+        // TEMPORARY SUBTASKS IN NEW TASK FORM
         // -------------------------------------------------------------
         window.addTempSubtask = function() {
             const input = document.getElementById('subtaskInput');
-            const title = input.value.trim();
-            if (!title) return;
-
-            tempSubtasks.push(title);
+            const val = input.value.trim();
+            if (!val) {
+                triggerInputError(input);
+                return;
+            }
+            tempSubtasks.push(val);
             input.value = '';
-            renderTempSubtasks();
-        };
-
-        window.removeTempSubtask = function(index) {
-            tempSubtasks.splice(index, 1);
-            if (editingTempSubtaskIndex === index) {
-                editingTempSubtaskIndex = null;
-            }
-            renderTempSubtasks();
-        };
-
-        window.startEditTempSubtask = function(index) {
-            editingTempSubtaskIndex = index;
-            renderTempSubtasks();
-        };
-
-        window.saveTempSubtaskEdit = function(index) {
-            const input = document.getElementById(`tempSubEditInput_${index}`);
-            if (input) {
-                const val = input.value.trim();
-                if (val) tempSubtasks[index] = val;
-            }
-            editingTempSubtaskIndex = null;
             renderTempSubtasks();
         };
 
@@ -1822,20 +1771,26 @@
             container.innerHTML = tempSubtasks.map((st, idx) => {
                 if (editingTempSubtaskIndex === idx) {
                     return `
-                        <div class="flex items-center space-x-2 bg-[#0B0F17] border border-indigo-500/60 rounded-xl px-3 py-1.5 text-xs">
-                            <input type="text" id="tempSubEditInput_${idx}" value="${escapeHtml(st)}" onkeydown="if(event.key==='Enter'){event.preventDefault();window.saveTempSubtaskEdit(${idx});}" class="flex-1 bg-transparent text-white focus:outline-none">
-                            <button type="button" onclick="window.saveTempSubtaskEdit(${idx})" class="text-emerald-400 hover:text-emerald-300 font-semibold">Uložit</button>
+                        <div class="flex items-center space-x-2 bg-[#0B0F17] border border-indigo-500/60 rounded-xl px-3 py-2 text-xs">
+                            <input type="text" id="editTempSubtaskInput_${idx}" value="${escapeHtml(st)}"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault();window.saveEditTempSubtask(${idx});} else if(event.key==='Escape'){window.cancelEditTempSubtask();}"
+                                class="flex-1 bg-transparent text-white focus:outline-none">
+                            <button type="button" onclick="window.saveEditTempSubtask(${idx})" class="text-emerald-400 hover:text-emerald-300 transition"><i data-lucide="check" class="w-3.5 h-3.5"></i></button>
+                            <button type="button" onclick="window.cancelEditTempSubtask()" class="text-slate-400 hover:text-slate-200 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
                         </div>
                     `;
                 }
                 return `
-                    <div class="flex items-center justify-between bg-[#0B0F17] border border-slate-800/90 rounded-xl px-3.5 py-2 text-xs">
-                        <span class="text-slate-300 truncate pr-2">${escapeHtml(st)}</span>
-                        <div class="flex items-center space-x-2 flex-shrink-0">
-                            <button type="button" onclick="window.startEditTempSubtask(${idx})" title="Upravit podúkol" class="text-slate-500 hover:text-indigo-400 transition">
+                    <div class="flex items-center justify-between bg-[#0B0F17] border border-slate-800 rounded-xl px-3.5 py-2 text-xs">
+                        <div class="flex items-center space-x-2.5 truncate">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></span>
+                            <span class="text-slate-200 truncate">${escapeHtml(st)}</span>
+                        </div>
+                        <div class="flex items-center space-x-2 flex-shrink-0 ml-2">
+                            <button type="button" onclick="window.startEditTempSubtask(${idx})" class="text-slate-500 hover:text-indigo-400 transition" title="Upravit podúkol">
                                 <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
                             </button>
-                            <button type="button" onclick="window.removeTempSubtask(${idx})" title="Odebrat podúkol" class="text-slate-500 hover:text-rose-400 transition">
+                            <button type="button" onclick="window.removeTempSubtask(${idx})" class="text-slate-500 hover:text-rose-400 transition" title="Odstranit podúkol">
                                 <i data-lucide="x" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
@@ -1845,116 +1800,51 @@
             lucide.createIcons();
         }
 
-        // -------------------------------------------------------------
-        // TASK CREATION (CLOUD SYNCED)
-        // -------------------------------------------------------------
-        window.createNewTask = async function(e) {
-            e.preventDefault();
-            if (!currentUser || !supabaseClient) return;
-
-            const titleInput = document.getElementById('taskTitle');
-            const title = titleInput.value.trim();
-            if (!title) return;
-
-            const category = document.getElementById('taskCategorySelect').value || 'Default';
-            const urgency = parseInt(document.getElementById('taskUrgencySelect').value, 10) || 3;
-            const day = String(document.getElementById('taskDaySelect').value).padStart(2, '0');
-            const month = String(document.getElementById('taskMonthSelect').value).padStart(2, '0');
-            const year = document.getElementById('taskYearSelect').value;
-            const dueDate = `${year}-${month}-${day}`;
-
-            const duplicateOnSameDay = tasks.some(t =>
-                !t.completed &&
-                t.dueDate === dueDate &&
-                t.title.toLowerCase() === title.toLowerCase()
-            );
-
-            if (duplicateOnSameDay) {
-                triggerInputError(titleInput);
-                showToast(`Úkol "${title}" už pro tento den existuje.`, 'warning', 'scroll');
-                return;
-            }
-
-            const newTaskId = crypto.randomUUID();
-            const generatedSubtasks = tempSubtasks.map(stTitle => ({
-                id: crypto.randomUUID(),
-                title: stTitle,
-                completed: false
-            }));
-
-            const newTask = {
-                id: newTaskId,
-                title,
-                category,
-                urgency,
-                dueDate,
-                color: selectedTaskColor,
-                completed: false,
-                completedAt: null,
-                earnedXp: 0,
-                countedInStreak: false,
-                subtasks: generatedSubtasks
-            };
-
-            tasks.push(newTask);
-            titleInput.value = '';
-            tempSubtasks = [];
-            editingTempSubtaskIndex = null;
+        window.startEditTempSubtask = function(idx) {
+            editingTempSubtaskIndex = idx;
             renderTempSubtasks();
-            renderTasks(newTaskId);
-            showToast('Úkol byl přidán.', 'success', 'scroll');
-
-            try {
-                const { error: taskInsertErr } = await supabaseClient
-                    .from('tasks')
-                    .insert({
-                        id: newTaskId,
-                        user_id: currentUser.id,
-                        title,
-                        category,
-                        urgency,
-                        due_date: dueDate,
-                        color: selectedTaskColor,
-                        completed: false,
-                        completed_at: null,
-                        earned_xp: 0,
-                        counted_in_streak: false
-                    });
-
-                if (taskInsertErr) throw taskInsertErr;
-
-                if (generatedSubtasks.length > 0) {
-                    const { error: subInsertErr } = await supabaseClient
-                        .from('subtasks')
-                        .insert(generatedSubtasks.map((st, idx) => ({
-                            id: st.id,
-                            task_id: newTaskId,
-                            user_id: currentUser.id,
-                            title: st.title,
-                            completed: false,
-                            position: idx
-                        })));
-
-                    if (subInsertErr) throw subInsertErr;
-                }
-            } catch (err) {
-                console.error('Chyba při ukládání úkolu do cloudu:', err);
-                showToast('Nepodařilo se uložit úkol do cloudu.', 'warning', 'alert-triangle');
+            const inp = document.getElementById(`editTempSubtaskInput_${idx}`);
+            if (inp) {
+                inp.focus();
+                inp.select();
             }
         };
 
+        window.saveEditTempSubtask = function(idx) {
+            const inp = document.getElementById(`editTempSubtaskInput_${idx}`);
+            if (inp && inp.value.trim()) {
+                tempSubtasks[idx] = inp.value.trim();
+            }
+            editingTempSubtaskIndex = null;
+            renderTempSubtasks();
+        };
+
+        window.cancelEditTempSubtask = function() {
+            editingTempSubtaskIndex = null;
+            renderTempSubtasks();
+        };
+
+        window.removeTempSubtask = function(idx) {
+            tempSubtasks.splice(idx, 1);
+            if (editingTempSubtaskIndex === idx) editingTempSubtaskIndex = null;
+            renderTempSubtasks();
+        };
+
         // -------------------------------------------------------------
-        // XP CALCULATION & SMOOTH COUNTER ANIMATION
+        // XP CALCULATION & ANIMATION
         // -------------------------------------------------------------
-        function updateXpDisplay(animate = true, isGain = true) {
+        function calculateTaskXp(task) {
+            const urgencyWeights = { 1: 10, 2: 20, 3: 35, 4: 55, 5: 80 };
+            const base = urgencyWeights[task.urgency] || 35;
+            const subtaskBonus = (task.subtasks?.length || 0) * 10;
+            const streakMultiplier = 1 + Math.min(dailyStreak, 10) * 0.1;
+            return Math.round((base + subtaskBonus) * streakMultiplier);
+        }
+
+        function updateXpDisplay(animate = true, delta = 0) {
             const xpEl = document.getElementById('userXp');
             const badgeBox = document.getElementById('xpBadgeBox');
-            if (!xpEl || !badgeBox) return;
-
-            if (xpAnimationFrameId) {
-                cancelAnimationFrame(xpAnimationFrameId);
-                xpAnimationFrameId = null;
-            }
+            if (!xpEl) return;
 
             if (!animate) {
                 displayedUserXp = userXp;
@@ -1962,420 +1852,710 @@
                 return;
             }
 
-            // Trigger pure green or red flash
-            clearTimeout(xpBadgeAnimTimeout);
-            badgeBox.classList.remove('animate-green-glow', 'animate-red-glow-shake');
-            void badgeBox.offsetWidth;
-            badgeBox.classList.add(isGain ? 'animate-green-glow' : 'animate-red-glow-shake');
-
-            xpBadgeAnimTimeout = setTimeout(() => {
+            if (badgeBox && delta !== 0) {
+                clearTimeout(xpBadgeAnimTimeout);
                 badgeBox.classList.remove('animate-green-glow', 'animate-red-glow-shake');
-            }, 600);
+                void badgeBox.offsetWidth;
+                badgeBox.classList.add(delta > 0 ? 'animate-green-glow' : 'animate-red-glow-shake');
+                xpBadgeAnimTimeout = setTimeout(() => {
+                    badgeBox.classList.remove('animate-green-glow', 'animate-red-glow-shake');
+                }, 600);
+            }
 
-            // Smooth numeric counter transition over 500ms
-            const startValue = displayedUserXp;
-            const endValue = userXp;
-            const duration = 500;
+            cancelAnimationFrame(xpAnimationFrameId);
+            const startXp = displayedUserXp;
+            const targetXp = userXp;
+            const duration = 450;
             const startTime = performance.now();
 
-            const step = (now) => {
-                const elapsed = now - startTime;
-                const progress = Math.min(elapsed / duration, 1);
+            function step(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
                 const eased = 1 - Math.pow(1 - progress, 3);
-                displayedUserXp = Math.round(startValue + (endValue - startValue) * eased);
+                displayedUserXp = Math.round(startXp + (targetXp - startXp) * eased);
                 xpEl.textContent = String(displayedUserXp);
-
                 if (progress < 1) {
                     xpAnimationFrameId = requestAnimationFrame(step);
                 } else {
-                    displayedUserXp = endValue;
-                    xpEl.textContent = String(endValue);
-                    xpAnimationFrameId = null;
+                    displayedUserXp = targetXp;
+                    xpEl.textContent = String(targetXp);
                 }
-            };
-
+            }
             xpAnimationFrameId = requestAnimationFrame(step);
         }
 
-        function calculateTaskXpReward(task) {
-            const baseXp = 15 + task.urgency * 5;
-            const subtaskBonus = Array.isArray(task.subtasks) ? task.subtasks.length * 5 : 0;
-            const diffDays = getDaysDifferenceFromToday(task.dueDate);
-            const onTime = diffDays >= 0;
-            const streakBonus = onTime ? dailyStreak * 10 : 0;
-            return {
-                total: baseXp + subtaskBonus + streakBonus,
-                onTime
-            };
-        }
-
-        async function syncTaskAndProfileCompletion(task, updateSubtasksState = null) {
-            if (!currentUser || !supabaseClient) return;
-            const todayStr = formatIsoDate(new Date());
-
-            try {
-                const ops = [
-                    supabaseClient
-                        .from('tasks')
-                        .update({
-                            completed: task.completed,
-                            completed_at: task.completedAt,
-                            earned_xp: task.earnedXp,
-                            counted_in_streak: task.countedInStreak
-                        })
-                        .eq('id', task.id),
-                    supabaseClient
-                        .from('profiles')
-                        .update({
-                            xp: userXp,
-                            daily_streak: dailyStreak,
-                            last_streak_date: todayStr
-                        })
-                        .eq('id', currentUser.id)
-                ];
-
-                if (typeof updateSubtasksState === 'boolean' && Array.isArray(task.subtasks) && task.subtasks.length > 0) {
-                    ops.push(
-                        supabaseClient
-                            .from('subtasks')
-                            .update({ completed: updateSubtasksState })
-                            .eq('task_id', task.id)
-                    );
-                }
-
-                await Promise.all(ops);
-            } catch (err) {
-                console.error('Chyba při synchronizaci splnění úkolu:', err);
+        // -------------------------------------------------------------
+        // TASK CRUD & INTERACTIONS
+        // -------------------------------------------------------------
+        window.createNewTask = async function(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('taskTitle');
+            const title = titleInput.value.trim();
+            if (!title) {
+                triggerInputError(titleInput);
+                return;
             }
-        }
 
-        // -------------------------------------------------------------
-        // FLIP SMOOTH REORDERING & TASK COMPLETION
-        // -------------------------------------------------------------
-        function captureTaskCardPositions() {
-            const map = new Map();
-            document.querySelectorAll('[data-task-id]').forEach(el => {
-                map.set(el.dataset.taskId, el.getBoundingClientRect());
-            });
-            return map;
-        }
+            const category = document.getElementById('taskCategorySelect').value || 'Default';
+            const urgency = parseInt(document.getElementById('taskUrgencySelect').value || '3', 10);
+            const day = String(document.getElementById('taskDaySelect').value || '1').padStart(2, '0');
+            const month = String(document.getElementById('taskMonthSelect').value || '1').padStart(2, '0');
+            const year = String(document.getElementById('taskYearSelect').value || '2026');
+            const dueDate = `${year}-${month}-${day}`;
+            const color = selectedTaskColor || '#FFFFFF';
 
-        function playFlipAnimation(oldPositions) {
-            document.querySelectorAll('[data-task-id]').forEach(el => {
-                const oldRect = oldPositions.get(el.dataset.taskId);
-                if (!oldRect) return;
-                const newRect = el.getBoundingClientRect();
-                const deltaY = oldRect.top - newRect.top;
-                const deltaX = oldRect.left - newRect.left;
+            const newTaskObj = {
+                id: crypto.randomUUID ? crypto.randomUUID() : `task_${Date.now()}`,
+                title,
+                category,
+                urgency,
+                dueDate,
+                color,
+                completed: false,
+                completedAt: null,
+                earnedXp: 0,
+                countedInStreak: false,
+                subtasks: tempSubtasks.map(stTitle => ({
+                    id: crypto.randomUUID ? crypto.randomUUID() : `sub_${Date.now()}_${Math.random()}`,
+                    title: stTitle,
+                    completed: false
+                }))
+            };
 
-                if (Math.abs(deltaY) > 1 || Math.abs(deltaX) > 1) {
-                    el.style.transition = 'none';
-                    el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-                    void el.offsetWidth;
-                    el.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
-                    el.style.transform = '';
-                    setTimeout(() => {
-                        el.style.transition = '';
-                    }, 460);
-                }
-            });
-        }
+            tasks.unshift(newTaskObj);
+            titleInput.value = '';
+            tempSubtasks = [];
+            editingTempSubtaskIndex = null;
+            renderTempSubtasks();
+            renderTasks(newTaskObj.id);
+            showToast('Nový úkol byl přidán!', 'success', 'scroll');
 
-        window.toggleTaskComplete = function(taskId) {
-            const task = tasks.find(t => t.id === taskId);
-            if (!task) return;
+            // Persist to Supabase
+            if (supabaseClient && currentUser) {
+                try {
+                    const { data: insertedTask, error: taskError } = await supabaseClient
+                        .from('tasks')
+                        .insert({
+                            id: newTaskObj.id,
+                            user_id: currentUser.id,
+                            title: newTaskObj.title,
+                            category: newTaskObj.category,
+                            urgency: newTaskObj.urgency,
+                            due_date: newTaskObj.dueDate,
+                            color: newTaskObj.color,
+                            completed: false,
+                            completed_at: null,
+                            earned_xp: 0,
+                            counted_in_streak: false
+                        })
+                        .select()
+                        .single();
 
-            const cardEl = document.querySelector(`[data-task-id="${taskId}"]`);
+                    if (taskError) throw taskError;
 
-            if (!task.completed) {
-                const finishCompletion = () => {
-                    const oldPositions = captureTaskCardPositions();
-                    task.completed = true;
-                    task.completedAt = Date.now();
-                    if (Array.isArray(task.subtasks)) {
-                        task.subtasks.forEach(st => st.completed = true);
+                    if (insertedTask && newTaskObj.subtasks.length > 0) {
+                        const subtaskPayload = newTaskObj.subtasks.map((st, idx) => ({
+                            id: st.id,
+                            task_id: insertedTask.id,
+                            user_id: currentUser.id,
+                            title: st.title,
+                            completed: false,
+                            position: idx
+                        }));
+                        const { error: stError } = await supabaseClient
+                            .from('subtasks')
+                            .insert(subtaskPayload);
+                        if (stError) throw stError;
                     }
-
-                    const reward = calculateTaskXpReward(task);
-                    task.earnedXp = reward.total;
-                    if (reward.onTime) {
-                        dailyStreak += 1;
-                        task.countedInStreak = true;
-                    } else {
-                        task.countedInStreak = false;
-                    }
-
-                    userXp += reward.total;
-                    updateXpDisplay(true, true);
-                    renderTasks();
-                    playFlipAnimation(oldPositions);
-                    syncTaskAndProfileCompletion(task, true);
-                };
-
-                if (cardEl) {
-                    const fillBar = cardEl.querySelector('.subtask-progress-fill');
-                    if (fillBar) fillBar.style.width = '100%';
-
-                    cardEl.classList.remove('task-overdue', 'task-close-deadline', 'task-close-deadline-1', 'task-close-deadline-2');
-                    void cardEl.offsetWidth;
-                    cardEl.classList.add('task-complete-flash');
-                    setTimeout(finishCompletion, 500);
-                } else {
-                    finishCompletion();
-                }
-            } else {
-                const oldPositions = captureTaskCardPositions();
-                task.completed = false;
-                task.completedAt = null;
-                if (Array.isArray(task.subtasks)) {
-                    task.subtasks.forEach(st => st.completed = false);
-                }
-
-                const deducted = task.earnedXp || 0;
-                if (task.countedInStreak && dailyStreak > 0) {
-                    dailyStreak -= 1;
-                }
-                task.earnedXp = 0;
-                task.countedInStreak = false;
-
-                userXp = Math.max(0, userXp - deducted);
-                updateXpDisplay(true, false);
-                renderTasks();
-                playFlipAnimation(oldPositions);
-                syncTaskAndProfileCompletion(task, false);
-
-                const updatedCard = document.querySelector(`[data-task-id="${taskId}"]`);
-                if (updatedCard) {
-                    updatedCard.classList.add('task-uncomplete-pulse');
-                    setTimeout(() => updatedCard.classList.remove('task-uncomplete-pulse'), 680);
+                } catch (err) {
+                    console.error('Chyba při ukládání úkolu do databáze:', err);
+                    showToast('Úkol se nepodařilo uložit do cloudu.', 'warning', 'alert-triangle');
                 }
             }
         };
 
-        window.toggleSubtaskComplete = function(taskId, subtaskId) {
+        window.toggleTaskComplete = async function(taskId, isFromAllSubtasks = false) {
             const task = tasks.find(t => t.id === taskId);
-            if (!task || !Array.isArray(task.subtasks)) return;
+            if (!task) return;
 
-            if (task.completed) {
-                showToast('Nejprve odškrtni celý úkol nahoře.', 'info', 'scroll');
-                return;
+            const cardEl = document.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
+
+            if (!task.completed) {
+                const earned = calculateTaskXp(task);
+                task.completed = true;
+                task.completedAt = Date.now();
+                task.earnedXp = earned;
+                task.subtasks.forEach(st => { st.completed = true; });
+
+                if (!task.countedInStreak) {
+                    dailyStreak += 1;
+                    task.countedInStreak = true;
+                }
+
+                userXp += earned;
+                updateXpDisplay(true, earned);
+                showToast(`Úkol splněn! +${earned} XP`, 'success', 'zap');
+
+                if (cardEl) {
+                    cardEl.classList.remove('task-overdue', 'task-close-deadline', 'task-close-deadline-1', 'task-close-deadline-2');
+                    cardEl.classList.add(isFromAllSubtasks ? 'task-complete-flash-long' : 'task-complete-flash');
+                }
+
+                // Sync to Supabase
+                if (supabaseClient && currentUser) {
+                    Promise.all([
+                        supabaseClient.from('tasks').update({
+                            completed: true,
+                            completed_at: task.completedAt,
+                            earned_xp: task.earnedXp,
+                            counted_in_streak: task.countedInStreak
+                        }).eq('id', task.id).eq('user_id', currentUser.id),
+                        task.subtasks.length > 0
+                            ? supabaseClient.from('subtasks').update({ completed: true }).eq('task_id', task.id).eq('user_id', currentUser.id)
+                            : Promise.resolve(),
+                        syncProfileStatsToCloud()
+                    ]).catch(err => console.error('Chyba při synchronizaci splnění úkolu:', err));
+                }
+
+                setTimeout(() => {
+                    renderTasks();
+                }, isFromAllSubtasks ? 880 : 480);
+            } else {
+                const lostXp = task.earnedXp || 0;
+                task.completed = false;
+                task.completedAt = null;
+                task.earnedXp = 0;
+
+                userXp = Math.max(0, userXp - lostXp);
+                updateXpDisplay(true, -lostXp);
+                showToast(`Úkol obnoven (${lostXp > 0 ? `-${lostXp} XP` : '0 XP'}).`, 'info', 'rotate-ccw');
+
+                if (supabaseClient && currentUser) {
+                    Promise.all([
+                        supabaseClient.from('tasks').update({
+                            completed: false,
+                            completed_at: null,
+                            earned_xp: 0
+                        }).eq('id', task.id).eq('user_id', currentUser.id),
+                        syncProfileStatsToCloud()
+                    ]).catch(err => console.error('Chyba při obnovení úkolu:', err));
+                }
+
+                renderTasks(null, task.id);
+            }
+        };
+
+        window.deleteTask = async function(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const confirmed = await showConfirmModal(`Opravdu chceš smazat úkol "${task.title}"?`);
+            if (!confirmed) return;
+
+            const cardEl = document.querySelector(`[data-task-id="${CSS.escape(taskId)}"]`);
+            if (cardEl) {
+                cardEl.classList.add('task-exit-anim');
             }
 
-            const subtask = task.subtasks.find(s => s.id === subtaskId);
-            if (!subtask) return;
+            setTimeout(async () => {
+                tasks = tasks.filter(t => t.id !== taskId);
+                renderTasks();
+                showToast('Úkol byl smazán.', 'info', 'trash-2');
 
-            const totalCount = task.subtasks.length;
-            const prevCompletedCount = task.subtasks.filter(s => s.completed).length;
-            const prevPercent = totalCount > 0 ? Math.round((prevCompletedCount / totalCount) * 100) : 0;
+                if (supabaseClient && currentUser) {
+                    const { error } = await supabaseClient
+                        .from('tasks')
+                        .delete()
+                        .eq('id', taskId)
+                        .eq('user_id', currentUser.id);
+                    if (error) {
+                        console.error('Chyba při mazání úkolu z databáze:', error);
+                    }
+                }
+            }, 280);
+        };
+
+        // -------------------------------------------------------------
+        // SUBTASKS ON EXISTING TASK CARDS
+        // -------------------------------------------------------------
+        window.toggleSubtask = async function(taskId, subtaskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            const subtask = task.subtasks.find(st => st.id === subtaskId);
+            if (!subtask) return;
 
             subtask.completed = !subtask.completed;
 
-            if (currentUser && supabaseClient) {
+            // Update progress bar smoothly before re-rendering if all completed
+            const completedCount = task.subtasks.filter(s => s.completed).length;
+            const totalCount = task.subtasks.length;
+            const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+            const barFill = document.getElementById(`progressFill_${taskId}`);
+            const barLabel = document.getElementById(`progressLabel_${taskId}`);
+            if (barFill) barFill.style.width = `${pct}%`;
+            if (barLabel) barLabel.textContent = `${completedCount}/${totalCount}`;
+
+            if (supabaseClient && currentUser) {
                 supabaseClient
                     .from('subtasks')
                     .update({ completed: subtask.completed })
                     .eq('id', subtask.id)
-                    .then(() => {});
+                    .eq('user_id', currentUser.id)
+                    .then(({ error }) => {
+                        if (error) console.error('Chyba při úpravě podúkolu:', error);
+                    });
             }
 
-            const newCompletedCount = task.subtasks.filter(s => s.completed).length;
-
-            if (newCompletedCount === totalCount && totalCount > 0) {
-                renderTasks(null, { [taskId]: prevPercent });
-                const cardEl = document.querySelector(`[data-task-id="${taskId}"]`);
-                if (cardEl) {
-                    cardEl.classList.remove('task-overdue', 'task-close-deadline', 'task-close-deadline-1', 'task-close-deadline-2');
-                    void cardEl.offsetWidth;
-                    cardEl.classList.add('task-complete-flash-long');
-                }
-
+            // If all subtasks are now completed and task is active, complete the parent task
+            if (!task.completed && totalCount > 0 && completedCount === totalCount) {
+                renderTasks();
                 setTimeout(() => {
-                    const oldPositions = captureTaskCardPositions();
-                    task.completed = true;
-                    task.completedAt = Date.now();
-
-                    const reward = calculateTaskXpReward(task);
-                    task.earnedXp = reward.total;
-                    if (reward.onTime) {
-                        dailyStreak += 1;
-                        task.countedInStreak = true;
-                    } else {
-                        task.countedInStreak = false;
-                    }
-
-                    userXp += reward.total;
-                    updateXpDisplay(true, true);
-                    renderTasks();
-                    playFlipAnimation(oldPositions);
-                    syncTaskAndProfileCompletion(task, null);
-                }, 900);
+                    window.toggleTaskComplete(taskId, true);
+                }, 120);
             } else {
-                renderTasks(null, { [taskId]: prevPercent });
+                renderTasks();
             }
         };
 
-        window.requestDeleteTask = function(taskId) {
+        window.addSubtaskToTask = async function(taskId, inputEl) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || !inputEl) return;
+
+            const title = inputEl.value.trim();
+            if (!title) {
+                triggerInputError(inputEl);
+                return;
+            }
+
+            const newSub = {
+                id: crypto.randomUUID ? crypto.randomUUID() : `sub_${Date.now()}_${Math.random()}`,
+                title,
+                completed: false
+            };
+
+            task.subtasks.push(newSub);
+            inputEl.value = '';
+            renderTasks();
+
+            if (supabaseClient && currentUser) {
+                const { error } = await supabaseClient
+                    .from('subtasks')
+                    .insert({
+                        id: newSub.id,
+                        task_id: task.id,
+                        user_id: currentUser.id,
+                        title: newSub.title,
+                        completed: false,
+                        position: task.subtasks.length - 1
+                    });
+                if (error) {
+                    console.error('Chyba při přidání podúkolu:', error);
+                }
+            }
+        };
+
+        window.deleteSubtask = async function(taskId, subtaskId) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
 
-            openConfirmModal(`Opravdu chceš smazat úkol "${task.title}"?`, () => {
-                const cardEl = document.querySelector(`[data-task-id="${taskId}"]`);
-                const finalizeTaskDelete = async () => {
-                    tasks = tasks.filter(t => t.id !== taskId);
-                    renderTasks();
-                    showToast('Úkol byl smazán.', 'info', 'scroll');
+            task.subtasks = task.subtasks.filter(st => st.id !== subtaskId);
+            renderTasks();
 
-                    if (currentUser && supabaseClient) {
-                        await supabaseClient.from('tasks').delete().eq('id', taskId);
-                    }
-                };
-
-                if (cardEl) {
-                    cardEl.classList.remove('task-enter-anim', 'task-overdue', 'task-close-deadline', 'task-close-deadline-1', 'task-close-deadline-2');
-                    void cardEl.offsetWidth;
-                    cardEl.classList.add('task-exit-anim');
-                    setTimeout(finalizeTaskDelete, 300);
-                } else {
-                    finalizeTaskDelete();
+            if (supabaseClient && currentUser) {
+                const { error } = await supabaseClient
+                    .from('subtasks')
+                    .delete()
+                    .eq('id', subtaskId)
+                    .eq('user_id', currentUser.id);
+                if (error) {
+                    console.error('Chyba při mazání podúkolu:', error);
                 }
-            });
+            }
         };
 
         // -------------------------------------------------------------
-        // EDIT TITLE & TASK COLOR MODALS (CLOUD SYNCED)
+        // EDIT TITLE & CHANGE TASK COLOR MODALS
         // -------------------------------------------------------------
         window.openEditTitleModal = function(type, taskId, subtaskId = null) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
 
-            currentEditTarget = { type, taskId, subtaskId };
-            const input = document.getElementById('editTitleInput');
-
+            let currentText = '';
             if (type === 'task') {
-                input.value = task.title;
-            } else if (type === 'subtask') {
+                currentText = task.title;
+            } else {
                 const st = task.subtasks.find(s => s.id === subtaskId);
                 if (!st) return;
-                input.value = st.title;
+                currentText = st.title;
             }
 
-            document.getElementById('editTitleModal').classList.remove('hidden');
-            setTimeout(() => input.focus(), 50);
+            currentEditTarget = { type, taskId, subtaskId };
+            const modal = document.getElementById('editTitleModal');
+            const input = document.getElementById('editTitleInput');
+            input.value = currentText;
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 30);
         };
 
         window.closeEditTitleModal = function() {
-            document.getElementById('editTitleModal').classList.add('hidden');
+            const modal = document.getElementById('editTitleModal');
+            if (modal) modal.classList.add('hidden');
             currentEditTarget = null;
         };
 
         window.saveTitleEdit = async function() {
             if (!currentEditTarget) return;
-            const newTitle = document.getElementById('editTitleInput').value.trim();
-            if (!newTitle) return;
+            const input = document.getElementById('editTitleInput');
+            const newTitle = input.value.trim();
+            if (!newTitle) {
+                triggerInputError(input);
+                return;
+            }
 
             const { type, taskId, subtaskId } = currentEditTarget;
             const task = tasks.find(t => t.id === taskId);
-
             if (task) {
                 if (type === 'task') {
                     task.title = newTitle;
-                    if (currentUser && supabaseClient) {
-                        supabaseClient.from('tasks').update({ title: newTitle }).eq('id', taskId).then(() => {});
+                    if (supabaseClient && currentUser) {
+                        supabaseClient.from('tasks').update({ title: newTitle }).eq('id', taskId).eq('user_id', currentUser.id).then(() => {});
                     }
                 } else if (type === 'subtask') {
                     const st = task.subtasks.find(s => s.id === subtaskId);
                     if (st) {
                         st.title = newTitle;
-                        if (currentUser && supabaseClient) {
-                            supabaseClient.from('subtasks').update({ title: newTitle }).eq('id', subtaskId).then(() => {});
+                        if (supabaseClient && currentUser) {
+                            supabaseClient.from('subtasks').update({ title: newTitle }).eq('id', subtaskId).eq('user_id', currentUser.id).then(() => {});
                         }
                     }
                 }
-                renderTasks();
-                showToast('Název byl upraven.', 'success', 'scroll');
             }
+
             window.closeEditTitleModal();
+            renderTasks();
+            showToast('Název byl upraven.', 'success', 'check');
         };
 
         window.openColorModal = function(taskId) {
             const task = tasks.find(t => t.id === taskId);
-            if (!task || task.completed) return;
+            if (!task) return;
 
             currentTargetTaskForColor = taskId;
-            const swatchesContainer = document.getElementById('colorModalSwatches');
-            swatchesContainer.innerHTML = colorPalette.map(c => {
+            const container = document.getElementById('colorModalSwatches');
+            container.innerHTML = colorPalette.map(c => {
                 const isSelected = c.hex.toUpperCase() === task.color.toUpperCase();
                 return `
-                    <button type="button" onclick="window.applyNewTaskColor('${escapeJsString(c.hex)}')" title="${escapeHtml(c.name)}"
-                        class="w-9 h-9 rounded-full transition-transform transform hover:scale-110 flex items-center justify-center ${
-                            isSelected ? 'ring-2 ring-offset-2 ring-offset-[#151C2C] ring-indigo-400 scale-110' : ''
-                        }"
+                    <button type="button" onclick="window.changeTaskColor('${escapeJsString(c.hex)}')" title="${escapeHtml(c.name)}"
+                        class="w-9 h-9 rounded-full transition transform hover:scale-110 flex items-center justify-center ${isSelected ? 'ring-2 ring-offset-2 ring-offset-[#151C2C] ring-indigo-400 scale-110' : 'opacity-85 hover:opacity-100'}"
                         style="background-color: ${escapeHtml(c.hex)};">
-                        ${isSelected ? `<i data-lucide="check" class="w-4 h-4 ${c.hex.toUpperCase() === '#FFFFFF' ? 'text-slate-900' : 'text-white'}"></i>` : ''}
+                        ${isSelected ? `<i data-lucide="check" class="w-4 h-4 ${c.hex.toUpperCase() === '#FFFFFF' ? 'text-slate-900' : 'text-white'} stroke-[3]"></i>` : ''}
                     </button>
                 `;
             }).join('');
-
-            document.getElementById('changeColorModal').classList.remove('hidden');
             lucide.createIcons();
+            document.getElementById('changeColorModal').classList.remove('hidden');
         };
 
         window.closeColorModal = function() {
-            document.getElementById('changeColorModal').classList.add('hidden');
+            const modal = document.getElementById('changeColorModal');
+            if (modal) modal.classList.add('hidden');
             currentTargetTaskForColor = null;
         };
 
-        window.applyNewTaskColor = function(hex) {
+        window.changeTaskColor = async function(hex) {
             if (!currentTargetTaskForColor) return;
-            const taskId = currentTargetTaskForColor;
-            const task = tasks.find(t => t.id === taskId);
+            const task = tasks.find(t => t.id === currentTargetTaskForColor);
+            const targetId = currentTargetTaskForColor;
             if (task) {
-                task.color = hex;
-                renderTasks();
-                if (currentUser && supabaseClient) {
-                    supabaseClient.from('tasks').update({ color: hex }).eq('id', taskId).then(() => {});
-                }
+                task.color = hex.toUpperCase();
             }
             window.closeColorModal();
+            renderTasks();
+
+            if (supabaseClient && currentUser) {
+                supabaseClient
+                    .from('tasks')
+                    .update({ color: hex.toUpperCase() })
+                    .eq('id', targetId)
+                    .eq('user_id', currentUser.id)
+                    .then(() => {});
+            }
         };
 
         // -------------------------------------------------------------
-        // CONFIRMATION MODAL & TOAST NOTIFICATIONS
+        // RENDER TASKS LIST
         // -------------------------------------------------------------
-        function openConfirmModal(message, onConfirm) {
-            const modal = document.getElementById('confirmModal');
-            const textEl = document.getElementById('confirmModalText');
-            const okBtn = document.getElementById('confirmModalOkBtn');
-            const cancelBtn = document.getElementById('confirmModalCancelBtn');
+        window.renderTasks = function(enterTaskId = null, uncompleteTaskId = null) {
+            const container = document.getElementById('tasksContainer');
+            if (!container) return;
 
-            textEl.textContent = message;
-            modal.classList.remove('hidden');
+            const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+            const filterCat = document.getElementById('filterCategorySelect')?.value || 'Vše';
+            const filterUrg = document.getElementById('filterUrgencySelect')?.value || 'Vše';
 
-            const cleanup = () => {
-                modal.classList.add('hidden');
-                okBtn.onclick = null;
-                cancelBtn.onclick = null;
-            };
+            const filtered = tasks.filter(t => {
+                const matchesSearch = !searchQuery ||
+                    t.title.toLowerCase().includes(searchQuery) ||
+                    t.subtasks.some(st => st.title.toLowerCase().includes(searchQuery));
+                const matchesCat = filterCat === 'Vše' || t.category === filterCat;
+                const matchesUrg = filterUrg === 'Vše' || String(t.urgency) === String(filterUrg);
+                return matchesSearch && matchesCat && matchesUrg;
+            });
 
-            cancelBtn.onclick = cleanup;
-            okBtn.onclick = () => {
-                cleanup();
-                if (typeof onConfirm === 'function') onConfirm();
-            };
+            const activeTasks = filtered
+                .filter(t => !t.completed)
+                .sort((a, b) => {
+                    if (b.urgency !== a.urgency) return b.urgency - a.urgency;
+                    return (a.dueDate || '').localeCompare(b.dueDate || '');
+                });
+
+            const completedTasks = filtered
+                .filter(t => t.completed)
+                .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+            if (activeTasks.length === 0 && completedTasks.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-[#151C2C] border border-slate-800/80 rounded-2xl p-10 text-center space-y-2.5 shadow-xl">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+                            <i data-lucide="scroll" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-200">Žádné úkoly k zobrazení</h3>
+                        <p class="text-xs text-slate-400">Vytvoř si nový úkol nahoře nebo uprav nastavené filtry.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            let html = '';
+
+            if (activeTasks.length > 0) {
+                html += `
+                    <section class="space-y-3">
+                        <div class="flex items-center justify-between px-1">
+                            <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                <span>Aktivní úkoly (${activeTasks.length})</span>
+                            </h2>
+                        </div>
+                        <div class="space-y-3">
+                            ${activeTasks.map(t => renderTaskCardHtml(t, enterTaskId === t.id, uncompleteTaskId === t.id)).join('')}
+                        </div>
+                    </section>
+                `;
+            }
+
+            if (completedTasks.length > 0) {
+                html += `
+                    <section class="space-y-3 pt-2">
+                        <div class="flex items-center justify-between px-1">
+                            <h2 class="text-xs font-extrabold uppercase tracking-wider text-emerald-400/80 flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <span>Splněné úkoly (${completedTasks.length})</span>
+                            </h2>
+                            <span class="text-[11px] text-slate-500">Automaticky se smažou po 24 hodinách</span>
+                        </div>
+                        <div class="space-y-3">
+                            ${completedTasks.map(t => renderTaskCardHtml(t, false, false)).join('')}
+                        </div>
+                    </section>
+                `;
+            }
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        };
+
+        function renderTaskCardHtml(task, isEntering = false, isUncompleting = false) {
+            const deadlineStatus = task.completed ? 'normal' : getDeadlineStatus(task.dueDate);
+            let glowClass = '';
+            if (deadlineStatus === 'overdue') glowClass = 'task-overdue';
+            else if (deadlineStatus === 'today') glowClass = 'task-close-deadline';
+            else if (deadlineStatus === 'tomorrow') glowClass = 'task-close-deadline-1';
+            else if (deadlineStatus === 'two-days') glowClass = 'task-close-deadline-2';
+
+            const animClass = isEntering ? 'task-enter-anim' : (isUncompleting ? 'task-uncomplete-pulse' : '');
+            const stars = '★'.repeat(task.urgency) + '<span class="text-slate-700">' + '★'.repeat(5 - task.urgency) + '</span>';
+
+            const totalSubs = task.subtasks.length;
+            const doneSubs = task.subtasks.filter(s => s.completed).length;
+            const progressPct = totalSubs > 0 ? Math.round((doneSubs / totalSubs) * 100) : 0;
+
+            let dueBadgeClass = 'text-slate-400 bg-[#0B0F17] border-slate-800';
+            if (!task.completed) {
+                if (deadlineStatus === 'overdue') dueBadgeClass = 'text-rose-400 bg-rose-500/10 border-rose-500/30 font-bold';
+                else if (deadlineStatus === 'today' || deadlineStatus === 'tomorrow') dueBadgeClass = 'text-amber-400 bg-amber-500/10 border-amber-500/30 font-semibold';
+            }
+
+            return `
+                <article data-task-id="${escapeHtml(task.id)}"
+                    class="relative overflow-hidden bg-[#151C2C] border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-xl transition ${glowClass} ${animClass} ${task.completed ? 'opacity-70' : ''}">
+                    
+                    <!-- Left Color Strip -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5" style="background-color: ${escapeHtml(task.color)};"></div>
+
+                    <div class="pl-2 space-y-3.5">
+                        <!-- Top Row: Checkbox, Title, Actions -->
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start space-x-3 min-w-0 flex-1">
+                                <button type="button" onclick="window.toggleTaskComplete('${escapeJsString(task.id)}')"
+                                    class="mt-0.5 w-5 h-5 rounded-lg border flex items-center justify-center flex-shrink-0 transition ${
+                                        task.completed
+                                            ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
+                                            : 'bg-[#0B0F17] border-slate-700 hover:border-indigo-400 text-transparent'
+                                    }" title="${task.completed ? 'Obnovit úkol' : 'Splnit úkol'}">
+                                    <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>
+                                </button>
+
+                                <div class="min-w-0 flex-1 space-y-1.5">
+                                    <h3 class="text-sm font-bold leading-snug break-words ${task.completed ? 'line-through text-slate-400' : 'text-white'}">
+                                        ${escapeHtml(task.title)}
+                                    </h3>
+
+                                    <!-- Metadata Pills -->
+                                    <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                                        <span class="px-2.5 py-0.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-semibold">
+                                            ${escapeHtml(task.category)}
+                                        </span>
+                                        <span class="px-2 py-0.5 rounded-lg bg-[#0B0F17] border border-slate-800 text-amber-400 tracking-tight" title="Naléhavost ${task.urgency}/5">
+                                            ${stars}
+                                        </span>
+                                        <span class="px-2.5 py-0.5 rounded-lg border flex items-center gap-1 ${dueBadgeClass}">
+                                            <i data-lucide="calendar" class="w-3 h-3"></i>
+                                            <span>${escapeHtml(formatDisplayDate(task.dueDate))}</span>
+                                        </span>
+                                        ${task.completed && task.earnedXp > 0
+                                            ? `<span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 font-bold">+${task.earnedXp} XP</span>`
+                                            : ''
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Action Buttons -->
+                            <div class="flex items-center space-x-1 flex-shrink-0">
+                                <button type="button" onclick="window.openEditTitleModal('task', '${escapeJsString(task.id)}')"
+                                    class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-800/80 transition" title="Upravit název úkolu">
+                                    <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button type="button" onclick="window.openColorModal('${escapeJsString(task.id)}')"
+                                    class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-800/80 transition" title="Změnit barvu úkolu">
+                                    <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button type="button" onclick="window.deleteTask('${escapeJsString(task.id)}')"
+                                    class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition" title="Smazat úkol">
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Subtasks Section (Progress Bar + Vertical List + Inline Add) -->
+                        ${(totalSubs > 0 || !task.completed) ? `
+                            <div class="pt-1 space-y-2.5 border-t border-slate-800/70">
+                                ${totalSubs > 0 ? `
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-1 h-1.5 bg-[#0B0F17] rounded-full overflow-hidden border border-slate-800/80">
+                                            <div id="progressFill_${escapeHtml(task.id)}"
+                                                class="subtask-progress-fill h-full rounded-full ${progressPct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}"
+                                                style="width: ${progressPct}%;"></div>
+                                        </div>
+                                        <span id="progressLabel_${escapeHtml(task.id)}" class="text-[11px] font-bold text-slate-400 tabular-nums">
+                                            ${doneSubs}/${totalSubs}
+                                        </span>
+                                    </div>
+
+                                    <div class="space-y-1.5">
+                                        ${task.subtasks.map(st => `
+                                            <div class="flex items-center justify-between bg-[#0B0F17]/80 border border-slate-800/80 rounded-xl px-3 py-2 text-xs group">
+                                                <div class="flex items-center space-x-2.5 min-w-0 flex-1">
+                                                    <button type="button" onclick="window.toggleSubtask('${escapeJsString(task.id)}', '${escapeJsString(st.id)}')"
+                                                        class="w-4 h-4 rounded-md border flex items-center justify-center flex-shrink-0 transition ${
+                                                            st.completed
+                                                                ? 'bg-emerald-500 border-emerald-500 text-slate-950'
+                                                                : 'bg-[#151C2C] border-slate-700 hover:border-indigo-400 text-transparent'
+                                                        }">
+                                                        <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+                                                    </button>
+                                                    <span class="truncate ${st.completed ? 'line-through text-slate-500' : 'text-slate-200'}">
+                                                        ${escapeHtml(st.title)}
+                                                    </span>
+                                                </div>
+                                                <div class="flex items-center space-x-1.5 flex-shrink-0 ml-2">
+                                                    <button type="button" onclick="window.openEditTitleModal('subtask', '${escapeJsString(task.id)}', '${escapeJsString(st.id)}')"
+                                                        class="text-slate-500 hover:text-indigo-400 transition p-0.5" title="Upravit podúkol">
+                                                        <i data-lucide="edit-2" class="w-3 h-3"></i>
+                                                    </button>
+                                                    <button type="button" onclick="window.deleteSubtask('${escapeJsString(task.id)}', '${escapeJsString(st.id)}')"
+                                                        class="text-slate-500 hover:text-rose-400 transition p-0.5" title="Smazat podúkol">
+                                                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+
+                                ${!task.completed ? `
+                                    <div class="flex items-center space-x-2">
+                                        <input type="text" placeholder="Přidat další podúkol..."
+                                            onkeydown="if(event.key==='Enter'){event.preventDefault();window.addSubtaskToTask('${escapeJsString(task.id)}', this);}"
+                                            class="flex-1 bg-[#0B0F17]/60 border border-slate-800/80 rounded-xl px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                                        <button type="button" onclick="window.addSubtaskToTask('${escapeJsString(task.id)}', this.previousElementSibling)"
+                                            class="px-2.5 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition flex items-center" title="Přidat podúkol">
+                                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </article>
+            `;
         }
 
-        function showToast(message, type = 'info', iconName = 'scroll') {
+        // -------------------------------------------------------------
+        // CUSTOM CONFIRMATION MODAL & TOAST NOTIFICATIONS
+        // -------------------------------------------------------------
+        function showConfirmModal(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirmModal');
+                const textEl = document.getElementById('confirmModalText');
+                const okBtn = document.getElementById('confirmModalOkBtn');
+                const cancelBtn = document.getElementById('confirmModalCancelBtn');
+
+                textEl.textContent = message;
+                modal.classList.remove('hidden');
+
+                function cleanup(result) {
+                    modal.classList.add('hidden');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    resolve(result);
+                }
+
+                function onOk() { cleanup(true); }
+                function onCancel() { cleanup(false); }
+
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+            });
+        }
+
+        function showToast(message, type = 'info', iconName = 'info') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
 
-            const colors = {
-                success: 'border-emerald-500/40 bg-[#151C2C]/95 text-emerald-300',
-                warning: 'border-amber-500/40 bg-[#151C2C]/95 text-amber-300',
-                info: 'border-indigo-500/40 bg-[#151C2C]/95 text-slate-200'
+            const styles = {
+                success: 'bg-[#151C2C]/95 border-emerald-500/40 text-emerald-300 shadow-emerald-950/50',
+                warning: 'bg-[#151C2C]/95 border-amber-500/40 text-amber-300 shadow-amber-950/50',
+                info: 'bg-[#151C2C]/95 border-indigo-500/40 text-indigo-200 shadow-indigo-950/50'
             };
 
             const toast = document.createElement('div');
-            toast.className = `pointer-events-auto flex items-center space-x-2.5 px-4 py-3 rounded-xl border shadow-2xl text-xs font-semibold backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.className = `pointer-events-auto flex items-center space-x-2.5 px-4 py-3 rounded-xl border text-xs font-semibold shadow-2xl backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${styles[type] || styles.info}`;
             toast.innerHTML = `
                 <i data-lucide="${escapeHtml(iconName)}" class="w-4 h-4 flex-shrink-0"></i>
                 <span>${escapeHtml(message)}</span>
@@ -2391,261 +2571,7 @@
             setTimeout(() => {
                 toast.classList.add('translate-y-2', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
-            }, 2800);
-        }
-
-        // -------------------------------------------------------------
-        // DATE HELPERS & TASKS RENDERING
-        // -------------------------------------------------------------
-        function getDaysDifferenceFromToday(isoDateStr) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const [y, m, d] = isoDateStr.split('-').map(Number);
-            const target = new Date(y, m - 1, d);
-            target.setHours(0, 0, 0, 0);
-            return Math.round((target - today) / (1000 * 60 * 60 * 24));
-        }
-
-        function formatCzechDateHeader(isoDateStr) {
-            const diffDays = getDaysDifferenceFromToday(isoDateStr);
-            const [y, m, d] = isoDateStr.split('-').map(Number);
-            const monthGenitive = [
-                'ledna', 'února', 'března', 'dubna', 'května', 'června',
-                'července', 'srpna', 'září', 'října', 'listopadu', 'prosince'
-            ];
-            const dateFormatted = `${d}. ${monthGenitive[m - 1]} ${y}`;
-
-            if (diffDays === 0) return `Dnes — ${dateFormatted}`;
-            if (diffDays === 1) return `Zítra — ${dateFormatted}`;
-            if (diffDays === -1) return `Včera — ${dateFormatted}`;
-            return dateFormatted;
-        }
-
-        function getUrgencyBadgeStyle(urgency) {
-            switch (urgency) {
-                case 5: return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
-                case 4: return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
-                case 3: return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
-                case 2: return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
-                default: return 'bg-slate-800 text-slate-400 border-slate-700';
-            }
-        }
-
-        window.renderTasks = function(newlyCreatedTaskId = null, progressStartOverrides = {}) {
-            const container = document.getElementById('tasksContainer');
-            if (!container) return;
-
-            const searchQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
-            const filterCategory = document.getElementById('filterCategorySelect')?.value || 'Vše';
-            const filterUrgency = document.getElementById('filterUrgencySelect')?.value || 'Vše';
-
-            const filteredTasks = tasks.filter(task => {
-                const matchesSearch = !searchQuery ||
-                    task.title.toLowerCase().includes(searchQuery) ||
-                    (Array.isArray(task.subtasks) && task.subtasks.some(st => st.title.toLowerCase().includes(searchQuery)));
-                const matchesCat = filterCategory === 'Vše' || task.category === filterCategory;
-                const matchesUrg = filterUrgency === 'Vše' || String(task.urgency) === String(filterUrgency);
-                return matchesSearch && matchesCat && matchesUrg;
-            });
-
-            if (filteredTasks.length === 0) {
-                container.innerHTML = `
-                    <div class="bg-[#151C2C] border border-slate-800/80 rounded-2xl p-10 text-center space-y-2 shadow-xl">
-                        <div class="w-12 h-12 rounded-2xl bg-slate-800/80 text-slate-500 flex items-center justify-center mx-auto mb-2">
-                            <i data-lucide="scroll" class="w-6 h-6"></i>
-                        </div>
-                        <p class="text-sm font-bold text-slate-300">Žádné úkoly k zobrazení</p>
-                        <p class="text-xs text-slate-500">Vytvoř nový úkol výše nebo uprav aktivní filtry.</p>
-                    </div>
-                `;
-                lucide.createIcons();
-                return;
-            }
-
-            // Group tasks by dueDate
-            const grouped = {};
-            filteredTasks.forEach(task => {
-                if (!grouped[task.dueDate]) grouped[task.dueDate] = [];
-                grouped[task.dueDate].push(task);
-            });
-
-            const sortedDates = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
-
-            container.innerHTML = sortedDates.map(dateStr => {
-                const dayTasks = grouped[dateStr].slice().sort((a, b) => {
-                    if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                    return b.urgency - a.urgency;
-                });
-
-                const diffDays = getDaysDifferenceFromToday(dateStr);
-                const isOverdueHeader = diffDays < 0 && dayTasks.some(t => !t.completed);
-
-                return `
-                    <section class="space-y-3">
-                        <div class="flex items-center justify-between px-1">
-                            <h2 class="text-xs font-extrabold uppercase tracking-wider ${isOverdueHeader ? 'text-rose-400' : 'text-slate-400'} flex items-center space-x-2">
-                                <i data-lucide="calendar" class="w-3.5 h-3.5 ${isOverdueHeader ? 'text-rose-400' : 'text-indigo-400'}"></i>
-                                <span>${escapeHtml(formatCzechDateHeader(dateStr))}</span>
-                            </h2>
-                            <span class="text-[11px] font-semibold text-slate-500">${dayTasks.filter(t => t.completed).length} / ${dayTasks.length} hotovo</span>
-                        </div>
-
-                        <div class="space-y-3">
-                            ${dayTasks.map(task => renderSingleTaskCard(task, newlyCreatedTaskId, progressStartOverrides)).join('')}
-                        </div>
-                    </section>
-                `;
-            }).join('');
-
-            lucide.createIcons();
-
-            Object.keys(progressStartOverrides).forEach(tId => {
-                const task = tasks.find(t => t.id === tId);
-                const card = container.querySelector(`[data-task-id="${tId}"]`);
-                if (task && card && Array.isArray(task.subtasks) && task.subtasks.length > 0) {
-                    const bar = card.querySelector('.subtask-progress-fill');
-                    if (bar) {
-                        const targetPct = Math.round((task.subtasks.filter(s => s.completed).length / task.subtasks.length) * 100);
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                bar.style.width = `${targetPct}%`;
-                            });
-                        });
-                    }
-                }
-            });
-
-            if (newlyCreatedTaskId) {
-                setTimeout(() => {
-                    const card = container.querySelector(`[data-task-id="${newlyCreatedTaskId}"]`);
-                    if (card) card.classList.remove('task-enter-anim');
-                }, 500);
-            }
-        };
-
-        function renderSingleTaskCard(task, newlyCreatedTaskId, progressStartOverrides) {
-            const diffDays = getDaysDifferenceFromToday(task.dueDate);
-            let glowClass = '';
-            let deadlineBadgeHtml = '';
-
-            if (!task.completed) {
-                if (diffDays < 0) {
-                    glowClass = 'task-overdue';
-                    deadlineBadgeHtml = `<span class="px-2 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-bold">Po termínu</span>`;
-                } else if (diffDays === 0) {
-                    glowClass = 'task-close-deadline';
-                    deadlineBadgeHtml = `<span class="px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold">Dnes termín</span>`;
-                } else if (diffDays === 1) {
-                    glowClass = 'task-close-deadline-1';
-                    deadlineBadgeHtml = `<span class="px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300/80 text-[10px] font-semibold">Zítra</span>`;
-                } else if (diffDays === 2) {
-                    glowClass = 'task-close-deadline-2';
-                }
-            }
-
-            const isNew = task.id === newlyCreatedTaskId;
-            const hasSubtasks = Array.isArray(task.subtasks) && task.subtasks.length > 0;
-
-            let subtasksHtml = '';
-            if (hasSubtasks) {
-                const totalSub = task.subtasks.length;
-                const doneSub = task.subtasks.filter(s => s.completed).length;
-                const targetPct = Math.round((doneSub / totalSub) * 100);
-                const initialPct = Object.prototype.hasOwnProperty.call(progressStartOverrides, task.id)
-                    ? progressStartOverrides[task.id]
-                    : targetPct;
-
-                const sortedSubtasks = task.subtasks.slice().sort((a, b) => {
-                    if (a.completed === b.completed) return 0;
-                    return a.completed ? 1 : -1;
-                });
-
-                subtasksHtml = `
-                    <div class="mt-3.5 pt-3.5 border-t border-slate-800/80 space-y-2.5">
-                        <div class="flex items-center justify-between text-[11px] font-semibold">
-                            <span class="text-slate-400">Podúkoly</span>
-                            <span class="${targetPct === 100 ? 'text-emerald-400' : 'text-indigo-300'}">${doneSub} / ${totalSub} (${targetPct}%)</span>
-                        </div>
-                        <div class="w-full h-1.5 bg-[#0B0F17] rounded-full overflow-hidden border border-slate-800/80">
-                            <div class="subtask-progress-fill h-full rounded-full ${targetPct === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}" style="width: ${initialPct}%;"></div>
-                        </div>
-                        <div class="flex flex-col space-y-1.5 pt-1">
-                            ${sortedSubtasks.map(st => `
-                                <div class="group/sub flex items-center justify-between bg-[#0B0F17]/75 border border-slate-800/80 rounded-xl px-3 py-2 text-xs transition ${st.completed ? 'opacity-60' : 'hover:border-slate-700'}">
-                                    <div class="flex items-center space-x-2.5 min-w-0 flex-1">
-                                        <button type="button" onclick="window.toggleSubtaskComplete('${escapeJsString(task.id)}', '${escapeJsString(st.id)}')"
-                                            class="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition ${
-                                                st.completed
-                                                    ? 'bg-emerald-500 border-emerald-500 text-slate-950'
-                                                    : 'border-slate-600 hover:border-indigo-400 text-transparent'
-                                            } ${task.completed ? 'cursor-not-allowed' : 'cursor-pointer'}">
-                                            <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
-                                        </button>
-                                        <span class="truncate ${st.completed ? 'line-through text-slate-500' : 'text-slate-200 font-medium'}">${escapeHtml(st.title)}</span>
-                                    </div>
-                                    ${!task.completed ? `
-                                        <button type="button" onclick="window.openEditTitleModal('subtask', '${escapeJsString(task.id)}', '${escapeJsString(st.id)}')" title="Upravit název podúkolu"
-                                            class="opacity-0 group-hover/sub:opacity-100 text-slate-500 hover:text-indigo-400 transition ml-2 flex-shrink-0">
-                                            <i data-lucide="edit-2" class="w-3 h-3"></i>
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            return `
-                <article data-task-id="${escapeHtml(task.id)}"
-                    class="group bg-[#151C2C] border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-xl transition-all duration-300 ${glowClass} ${isNew ? 'task-enter-anim' : ''} ${task.completed ? 'opacity-60 bg-[#151C2C]/70' : 'hover:border-slate-700/90'}">
-                    <div class="flex items-start justify-between gap-4">
-                        <!-- Left: Color Circle + Task Title -->
-                        <div class="flex items-center space-x-3.5 min-w-0 flex-1">
-                            <button type="button" onclick="window.openColorModal('${escapeJsString(task.id)}')" title="${task.completed ? 'Splněný úkol' : 'Změnit barvu úkolu'}"
-                                class="w-4 h-4 rounded-full flex-shrink-0 transition-transform ${task.completed ? 'cursor-default opacity-70' : 'hover:scale-125 cursor-pointer'}"
-                                style="background-color: ${escapeHtml(task.color)}; box-shadow: 0 0 10px ${escapeHtml(task.color)}55;">
-                            </button>
-                            <div class="flex items-center space-x-2 min-w-0">
-                                <h3 class="text-base font-bold leading-snug break-words ${task.completed ? 'line-through text-slate-400' : 'text-white'}">
-                                    ${escapeHtml(task.title)}
-                                </h3>
-                                ${!task.completed ? `
-                                    <button type="button" onclick="window.openEditTitleModal('task', '${escapeJsString(task.id)}')" title="Upravit název úkolu"
-                                        class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-indigo-400 transition flex-shrink-0 p-1">
-                                        <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-
-                        <!-- Right: Badges + Complete Circle + Delete Cross -->
-                        <div class="flex items-center space-x-2.5 flex-shrink-0">
-                            ${deadlineBadgeHtml}
-                            <span class="px-2.5 py-1 rounded-lg bg-slate-800/90 border border-slate-700/70 text-[11px] font-semibold text-slate-300">
-                                ${escapeHtml(task.category)}
-                            </span>
-                            <span class="px-2.5 py-1 rounded-lg border text-[11px] font-bold ${getUrgencyBadgeStyle(task.urgency)}">
-                                ★ ${task.urgency}
-                            </span>
-                            <button type="button" onclick="window.toggleTaskComplete('${escapeJsString(task.id)}')" title="${task.completed ? 'Zrušit splnění' : 'Označit jako splněné'}"
-                                class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition transform hover:scale-105 ${
-                                    task.completed
-                                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
-                                        : 'border-slate-600 hover:border-emerald-400 text-transparent hover:text-emerald-400/50'
-                                }">
-                                <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
-                            </button>
-                            <button type="button" onclick="window.requestDeleteTask('${escapeJsString(task.id)}')" title="Smazat úkol"
-                                class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition flex items-center justify-center">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    ${subtasksHtml}
-                </article>
-            `;
+            }, 3000);
         }
     </script>
 </body>
